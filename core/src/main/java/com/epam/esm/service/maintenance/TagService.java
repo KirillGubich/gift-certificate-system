@@ -32,8 +32,13 @@ public class TagService implements CommonService<TagDto> {
 
     @Override
     public List<TagDto> readAll() {
-        dao.readAll();
-        return new ArrayList<>();
+        final List<Tag> tags = dao.readAll();
+        final ArrayList<TagDto> tagDtos = new ArrayList<>();
+        for (Tag tag : tags) {
+            final TagDto tagDto = new TagDto(tag.getId(), tag.getName());
+            tagDtos.add(tagDto);
+        }
+        return tagDtos;
     }
 
     @Override

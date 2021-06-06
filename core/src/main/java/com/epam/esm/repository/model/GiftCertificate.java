@@ -16,6 +16,9 @@ public class GiftCertificate {
     private LocalDateTime lastUpdateDate;
     private Set<Tag> tags;
 
+    private GiftCertificate() {
+    }
+
     public int getId() {
         return id;
     }
@@ -108,6 +111,10 @@ public class GiftCertificate {
                 ", lastUpdateDate=" + lastUpdateDate +
                 ", tags=" + tags +
                 '}';
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static class Builder {
