@@ -49,11 +49,6 @@ public class TagDao implements CommonDao<Tag> {
     }
 
     @Override
-    public Tag update(Tag entity) { //todo remove or return null
-        return null;
-    }
-
-    @Override
     public boolean delete(int id) {
         return jdbcTemplate.update(DELETE_TAG_BY_ID_SQL, id) > 0;
     }

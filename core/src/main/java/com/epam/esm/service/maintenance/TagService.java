@@ -42,8 +42,8 @@ public class TagService implements CommonService<TagDto> {
     }
 
     @Override
-    public Optional<TagDto> update(TagDto entity) {
-        return Optional.empty();
+    public TagDto update(TagDto entity) {
+        return null;
     }
 
     @Override

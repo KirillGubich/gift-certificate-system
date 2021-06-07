@@ -11,7 +11,5 @@ public interface CommonDao<T> {
 
     boolean create(T entity);
 
-    T update(T entity);
-
     boolean delete(int id);
 }

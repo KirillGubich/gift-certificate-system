@@ -11,7 +11,7 @@ public interface CommonService<T> {
 
     List<T> readAll();
 
-    Optional<T> update(T entity);
+    T update(T entity);
 
     boolean delete(int id);
 }
