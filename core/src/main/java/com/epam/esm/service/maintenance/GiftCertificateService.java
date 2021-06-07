@@ -35,13 +35,13 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     @Override
-    public boolean create(GiftCertificateDto entity) {
-        final Set<Tag> tags = entity.getTags();
+    public boolean create(GiftCertificateDto dto) {
+        final Set<Tag> tags = dto.getTags();
         processForNewTags(tags);
         for (Tag tag : tags) {
-            certificateDao.addTagToCertificate(entity.getId(), tag.getId());
+            certificateDao.addTagToCertificate(dto.getId(), tag.getId());
         }
-        return certificateDao.create(mapToModel(entity));
+        return certificateDao.create(mapToModel(dto));
     }
 
     @Override
@@ -57,15 +57,15 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     @Override
-    public GiftCertificateDto update(GiftCertificateDto entity) {
-        final int id = entity.getId();
+    public GiftCertificateDto update(GiftCertificateDto dto) {
+        final int id = dto.getId();
         final Optional<GiftCertificate> giftCertificateOptional = certificateDao.read(id);
         if (!giftCertificateOptional.isPresent()) {
             throw new RuntimeException(); //todo custom exception
         }
         final GiftCertificate oldCertificate = giftCertificateOptional.get();
-        GiftCertificate giftCertificate = createUpdatedEntity(entity, oldCertificate);
-        processUpdatedTags(id, oldCertificate.getTags(), entity.getTags());
+        GiftCertificate giftCertificate = createUpdatedEntity(dto, oldCertificate);
+        processUpdatedTags(id, oldCertificate.getTags(), dto.getTags());
         return mapToDto(certificateDao.update(giftCertificate));
     }
 

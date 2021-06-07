@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TagService implements CommonService<TagDto> {
@@ -21,33 +22,37 @@ public class TagService implements CommonService<TagDto> {
     }
 
     @Override
-    public boolean create(TagDto entity) {
-        return false;
+    public boolean create(TagDto dto) {
+        return dao.create(mapToEntity(dto));
     }
 
     @Override
     public Optional<TagDto> read(int id) {
-        return Optional.empty();
+        final Optional<Tag> tag = dao.read(id);
+        return tag.map(this::mapToDto);
     }
 
     @Override
     public List<TagDto> readAll() {
         final List<Tag> tags = dao.readAll();
-        final ArrayList<TagDto> tagDtos = new ArrayList<>();
-        for (Tag tag : tags) {
-            final TagDto tagDto = new TagDto(tag.getId(), tag.getName());
-            tagDtos.add(tagDto);
-        }
-        return tagDtos;
+        return tags.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
     @Override
-    public TagDto update(TagDto entity) {
-        return null;
+    public TagDto update(TagDto dto) {
+        return null; //todo remove or not
     }
 
     @Override
     public boolean delete(int id) {
-        return false;
+        return dao.delete(id);
+    }
+
+    private TagDto mapToDto(Tag tag) {
+        return new TagDto(tag.getId(), tag.getName());
+    }
+
+    private Tag mapToEntity(TagDto tagDto) {
+        return new Tag(tagDto.getId(), tagDto.getName());
     }
 }
