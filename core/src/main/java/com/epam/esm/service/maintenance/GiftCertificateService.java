@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -35,19 +36,27 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     @Override
-    public boolean create(GiftCertificateDto dto) {
-        final Set<Tag> tags = dto.getTags();
-        processForNewTags(tags);
+    public GiftCertificateDto create(GiftCertificateDto dto) {
+        Set<Tag> tags = dto.getTags();
+        tags = processForNewTags(tags);
+        GiftCertificate giftCertificate = certificateDao.create(mapToModel(dto));
+        int certificateId = giftCertificate.getId();
         for (Tag tag : tags) {
-            certificateDao.addTagToCertificate(dto.getId(), tag.getId());
+            certificateDao.addTagToCertificate(certificateId, tag.getId());
         }
-        return certificateDao.create(mapToModel(dto));
+        GiftCertificateDto certificateDto = mapToDto(giftCertificate);
+        certificateDto.setTags(tags);
+        return certificateDto;
     }
 
     @Override
-    public Optional<GiftCertificateDto> read(int id) {
+    public GiftCertificateDto read(int id) {
         final Optional<GiftCertificate> giftCertificate = certificateDao.read(id);
-        return giftCertificate.map(this::mapToDto);
+        if (!giftCertificate.isPresent()) {
+            //todo throw custom Exception
+            throw new RuntimeException();
+        }
+        return mapToDto(giftCertificate.get());
     }
 
     @Override
@@ -75,10 +84,12 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     public List<GiftCertificateDto> searchByTagName(String tagName) {
-        final Optional<Tag> tagOptional = tagDao.readByName(tagName);
+        if (tagName == null) {
+            return Collections.emptyList();
+        }
+        Optional<Tag> tagOptional = tagDao.readByName(tagName);
         if (!tagOptional.isPresent()) {
-            //todo handle
-            throw new RuntimeException();
+            return Collections.emptyList();
         }
         int tagId = tagOptional.get().getId();
         List<GiftCertificate> certificates = certificateDao.fetchCertificatesByTagId(tagId);
@@ -88,6 +99,9 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     public List<GiftCertificateDto> searchByPartOfName(String partOfName) {
+        if (partOfName == null) {
+            return Collections.emptyList();
+        }
         List<GiftCertificate> certificates = certificateDao.fetchCertificatesByPartOfName(partOfName);
         return certificates.stream()
                 .map(this::mapToDto)
@@ -95,45 +109,48 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     public List<GiftCertificateDto> searchByPartOfDescription(String partOfDescription) {
+        if (partOfDescription == null) {
+            return Collections.emptyList();
+        }
         List<GiftCertificate> certificates = certificateDao.fetchCertificatesByPartOfDescription(partOfDescription);
         return certificates.stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
-    public List<GiftCertificateDto> sortByNameAscending(List<GiftCertificateDto> certificates) {
+    public void sortByNameAscending(List<GiftCertificateDto> certificates) {
         certificates.sort(Comparator.comparing(GiftCertificateDto::getName));
-        return certificates;
     }
 
-    public List<GiftCertificateDto> sortByNameDescending(List<GiftCertificateDto> certificates) {
+    public void sortByNameDescending(List<GiftCertificateDto> certificates) {
         certificates.sort(Comparator.comparing(GiftCertificateDto::getName).reversed());
-        return certificates;
     }
 
-    public List<GiftCertificateDto> sortByDateAscending(List<GiftCertificateDto> certificates) {
+    public void sortByDateAscending(List<GiftCertificateDto> certificates) {
         certificates.sort(Comparator.comparing(GiftCertificateDto::getCreateDate));
-        return certificates;
     }
 
-    public List<GiftCertificateDto> sortByDateDescending(List<GiftCertificateDto> certificates) {
+    public void sortByDateDescending(List<GiftCertificateDto> certificates) {
         certificates.sort(Comparator.comparing(GiftCertificateDto::getCreateDate).reversed());
-        return certificates;
     }
 
-    private void processForNewTags(Set<Tag> tags) {
+    private Set<Tag> processForNewTags(Set<Tag> tags) {
+        Set<Tag> updatedTags = new HashSet<>();
         for (Tag tag : tags) {
-            final Optional<Tag> optionalTag = tagDao.readByName(tag.getName());
+            Optional<Tag> optionalTag = tagDao.readByName(tag.getName());
             if (!optionalTag.isPresent()) {
-                tagDao.create(tag);
+                updatedTags.add(tagDao.create(tag));
+            } else {
+                updatedTags.add(optionalTag.get());
             }
         }
+        return updatedTags;
     }
 
     private void processUpdatedTags(int certificateId, Set<Tag> oldTags, Set<Tag> newTags) {
         Set<Tag> tagsToRemove = new HashSet<>(oldTags);
         tagsToRemove.removeAll(newTags);
-        Set<Tag> tagsToAdd =new HashSet<>(newTags);
+        Set<Tag> tagsToAdd = new HashSet<>(newTags);
         tagsToAdd.removeAll(oldTags);
         for (Tag tag : tagsToRemove) {
             certificateDao.removeTagFromCertificate(certificateId, tag.getId());
@@ -146,23 +163,19 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
 
     private GiftCertificate createUpdatedEntity(GiftCertificateDto entity, GiftCertificate oldEntity) {
         String name = entity.getName().isEmpty() ? oldEntity.getName() : entity.getName();
-        String description = entity.getDescription().isEmpty() ?
+        String description = entity.getDescription() == null ?
                 oldEntity.getDescription() : entity.getDescription();
         BigDecimal price = entity.getPrice() == null ? oldEntity.getPrice() : entity.getPrice();
         Period duration = entity.getDuration() == null ?
-                oldEntity.getDuration() : entity.getDuration();
-        LocalDateTime createDate = entity.getCreateDate() == null ?
-                oldEntity.getCreateDate() : entity.getCreateDate();
-        LocalDateTime lastUpdateDate = entity.getLastUpdateDate() == null ?
-                oldEntity.getLastUpdateDate() : entity.getLastUpdateDate();
+                oldEntity.getDuration() : Period.ofDays(entity.getDuration());
         return GiftCertificate.builder()
                 .withId(entity.getId())
                 .withName(name)
                 .withDescription(description)
                 .withPrice(price)
                 .withDuration(duration)
-                .withCreateDate(createDate)
-                .withLastUpdateDate(lastUpdateDate)
+                .withCreateDate(oldEntity.getCreateDate())
+                .withLastUpdateDate(oldEntity.getLastUpdateDate())
                 .build();
     }
 
@@ -172,9 +185,9 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
                 .withName(certificate.getName())
                 .withDescription(certificate.getDescription())
                 .withPrice(certificate.getPrice())
-                .withDuration(certificate.getDuration())
-                .withCreateDate(certificate.getCreateDate())
-                .withLastUpdateDate(certificate.getLastUpdateDate())
+                .withDuration(certificate.getDuration().getDays())
+                .withCreateDate(certificate.getCreateDate().toString())
+                .withLastUpdateDate(certificate.getLastUpdateDate().toString())
                 .withTags(certificate.getTags())
                 .build();
     }
@@ -185,9 +198,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
                 .withName(certificate.getName())
                 .withDescription(certificate.getDescription())
                 .withPrice(certificate.getPrice())
-                .withDuration(certificate.getDuration())
-                .withCreateDate(certificate.getCreateDate())
-                .withLastUpdateDate(certificate.getLastUpdateDate())
+                .withDuration(Period.ofDays(certificate.getDuration()))
                 .withTags(certificate.getTags())
                 .build();
     }

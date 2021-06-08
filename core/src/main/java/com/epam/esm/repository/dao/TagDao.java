@@ -43,9 +43,10 @@ public class TagDao implements CommonDao<Tag> {
     }
 
     @Override
-    public boolean create(Tag entity) {
+    public Tag create(Tag entity) {
         final String name = entity.getName();
-        return jdbcTemplate.update(CREATE_TAG_SQL, name) > 0; //todo exception handling
+        jdbcTemplate.update(CREATE_TAG_SQL, name);
+        return readByName(name).get(); //todo exception handling
     }
 
     @Override

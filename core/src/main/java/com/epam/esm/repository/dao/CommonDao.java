@@ -9,7 +9,7 @@ public interface CommonDao<T> {
 
     List<T> readAll();
 
-    boolean create(T entity);
+    T create(T entity);
 
     boolean delete(int id);
 }

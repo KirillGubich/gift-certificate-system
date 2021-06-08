@@ -1,14 +1,13 @@
 package com.epam.esm.repository.dao;
 
 import com.epam.esm.repository.mapper.GiftCertificateMapper;
+import com.epam.esm.repository.mapper.TagMapper;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -21,10 +20,13 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     private static final String GET_CERTIFICATE_BY_ID_SQL = "SELECT " +
             "id, name, description, price, duration, create_date, last_update_date FROM gift_certificates " +
             "WHERE id = ?";
+    private static final String GET_CERTIFICATE_BY_NAME_SQL = "SELECT " +
+            "id, name, description, price, duration, create_date, last_update_date FROM gift_certificates " +
+            "WHERE name = ?";
     private static final String GET_ALL_CERTIFICATES_SQL = "SELECT " +
             "id, name, description, price, duration, create_date, last_update_date FROM gift_certificates";
     private static final String UPDATE_CERTIFICATE_BY_ID_SQL = "UPDATE gift_certificates " +
-            "SET name = ?, description = ?, price = ?, duration = ?, create_date = ?, last_update_date = ?," +
+            "SET name = ?, description = ?, price = ?, duration = ?, create_date = ?, last_update_date = ? " +
             "WHERE id = ?";
     private static final String DELETE_CERTIFICATE_BY_ID_SQL = "DELETE FROM gift_certificates WHERE id = ?";
     private static final String CREATE_CERTIFICATE_SQL = "INSERT INTO gift_certificates " +
@@ -73,14 +75,16 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     }
 
     @Override
-    public boolean create(GiftCertificate entity) {
-        return jdbcTemplate.update(CREATE_CERTIFICATE_SQL,
+    public GiftCertificate create(GiftCertificate entity) {
+        LocalDateTime now = LocalDateTime.now();
+        jdbcTemplate.update(CREATE_CERTIFICATE_SQL,
                 entity.getName(),
                 entity.getDescription(),
                 entity.getPrice(),
                 entity.getDuration().getDays(),
-                entity.getCreateDate(),
-                entity.getLastUpdateDate()) > 0; //todo add exception handling
+                now,
+                now);
+        return readByName(entity.getName()).orElseThrow(RuntimeException::new); //todo custom exception and add exception handling
     }
 
     @Override
@@ -91,12 +95,13 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     public GiftCertificate update(GiftCertificate entity) { //todo add exception handling
         final Optional<GiftCertificate> oldCertificateOptional = read(entity.getId());
         if (!oldCertificateOptional.isPresent()) {
-            //todo throw exception
+            //todo throw custom exception
             throw new RuntimeException();
         }
+        LocalDateTime now = LocalDateTime.now();
         jdbcTemplate.update(UPDATE_CERTIFICATE_BY_ID_SQL, entity.getName(), entity.getDescription(), entity.getPrice(),
-                entity.getDuration().getDays(), entity.getCreateDate(), entity.getLastUpdateDate(), entity.getId());
-        return oldCertificateOptional.get();
+                entity.getDuration().getDays(), entity.getCreateDate(), now, entity.getId());
+        return read(entity.getId()).orElseThrow(RuntimeException::new); //todo custom exception
     }
 
     public List<GiftCertificate> fetchCertificatesByTagId(int tagId) {
@@ -130,6 +135,17 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
         jdbcTemplate.update(DELETE_CERTIFICATE_TAG_SQL, certificateId, tagId);
     }
 
+    private Optional<GiftCertificate> readByName(String name) {
+        List<GiftCertificate> queryResult =
+                jdbcTemplate.query(GET_CERTIFICATE_BY_NAME_SQL, new GiftCertificateMapper(), name);
+        Optional<GiftCertificate> giftCertificate = queryResult.stream().findFirst();
+        if (giftCertificate.isPresent()) {
+            Set<Tag> tags = fetchCertificateTags(giftCertificate.get().getId());
+            giftCertificate.get().setTags(tags);
+        }
+        return giftCertificate;
+    }
+
     private void fillCertificateTags(List<GiftCertificate> certificates) {
         for (GiftCertificate certificate : certificates) {
             final Set<Tag> tags = fetchCertificateTags(certificate.getId());
@@ -139,7 +155,7 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
 
     private Set<Tag> fetchCertificateTags(int id) {
         final List<Tag> tagsList =
-                jdbcTemplate.query(GET_CERTIFICATE_TAGS_SQL, new BeanPropertyRowMapper<>(Tag.class), id);
+                jdbcTemplate.query(GET_CERTIFICATE_TAGS_SQL, new TagMapper(), id);
         return new HashSet<>(tagsList);
     }
 }

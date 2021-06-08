@@ -22,14 +22,19 @@ public class TagService implements CommonService<TagDto> {
     }
 
     @Override
-    public boolean create(TagDto dto) {
-        return dao.create(mapToEntity(dto));
+    public TagDto create(TagDto dto) {
+        Tag tag = dao.create(mapToEntity(dto));
+        return mapToDto(tag);
     }
 
     @Override
-    public Optional<TagDto> read(int id) {
+    public TagDto read(int id) {
         final Optional<Tag> tag = dao.read(id);
-        return tag.map(this::mapToDto);
+        if (!tag.isPresent()) {
+            //todo throw custom Exception
+            throw new RuntimeException();
+        }
+        return mapToDto(tag.get());
     }
 
     @Override

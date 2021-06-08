@@ -3,8 +3,6 @@ package com.epam.esm.service.dto;
 import com.epam.esm.repository.model.Tag;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.Period;
 import java.util.Objects;
 import java.util.Set;
 
@@ -13,9 +11,9 @@ public class GiftCertificateDto {
     private String name;
     private String description;
     private BigDecimal price;
-    private Period duration;
-    private LocalDateTime createDate;
-    private LocalDateTime lastUpdateDate;
+    private Integer duration;
+    private String createDate;
+    private String lastUpdateDate;
     private Set<Tag> tags;
 
     private GiftCertificateDto() {
@@ -53,27 +51,27 @@ public class GiftCertificateDto {
         this.price = price;
     }
 
-    public Period getDuration() {
+    public Integer getDuration() {
         return duration;
     }
 
-    public void setDuration(Period duration) {
+    public void setDuration(Integer duration) {
         this.duration = duration;
     }
 
-    public LocalDateTime getCreateDate() {
+    public String getCreateDate() {
         return createDate;
     }
 
-    public void setCreateDate(LocalDateTime createDate) {
+    public void setCreateDate(String createDate) {
         this.createDate = createDate;
     }
 
-    public LocalDateTime getLastUpdateDate() {
+    public String getLastUpdateDate() {
         return lastUpdateDate;
     }
 
-    public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
+    public void setLastUpdateDate(String lastUpdateDate) {
         this.lastUpdateDate = lastUpdateDate;
     }
 
@@ -90,10 +88,7 @@ public class GiftCertificateDto {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GiftCertificateDto that = (GiftCertificateDto) o;
-        return id == that.id && duration == that.duration && Objects.equals(name, that.name)
-                && Objects.equals(description, that.description) && Objects.equals(price, that.price)
-                && Objects.equals(createDate, that.createDate) && Objects.equals(lastUpdateDate, that.lastUpdateDate)
-                && Objects.equals(tags, that.tags);
+        return id == that.id && duration == that.duration && Objects.equals(name, that.name) && Objects.equals(description, that.description) && Objects.equals(price, that.price) && Objects.equals(createDate, that.createDate) && Objects.equals(lastUpdateDate, that.lastUpdateDate) && Objects.equals(tags, that.tags);
     }
 
     @Override
@@ -109,8 +104,8 @@ public class GiftCertificateDto {
                 ", description='" + description + '\'' +
                 ", price=" + price +
                 ", duration=" + duration +
-                ", createDate=" + createDate +
-                ", lastUpdateDate=" + lastUpdateDate +
+                ", createDate='" + createDate + '\'' +
+                ", lastUpdateDate='" + lastUpdateDate + '\'' +
                 ", tags=" + tags +
                 '}';
     }
@@ -124,9 +119,9 @@ public class GiftCertificateDto {
         private String name;
         private String description;
         private BigDecimal price;
-        private Period duration;
-        private LocalDateTime createDate;
-        private LocalDateTime lastUpdateDate;
+        private Integer duration;
+        private String createDate;
+        private String lastUpdateDate;
         private Set<Tag> tags;
 
         public Builder withId(int id) {
@@ -149,17 +144,17 @@ public class GiftCertificateDto {
             return this;
         }
 
-        public Builder withDuration(Period duration) {
+        public Builder withDuration(Integer duration) {
             this.duration = duration;
             return this;
         }
 
-        public Builder withCreateDate(LocalDateTime createDate) {
+        public Builder withCreateDate(String createDate) {
             this.createDate = createDate;
             return this;
         }
 
-        public Builder withLastUpdateDate(LocalDateTime lastUpdateDate) {
+        public Builder withLastUpdateDate(String lastUpdateDate) {
             this.lastUpdateDate = lastUpdateDate;
             return this;
         }
@@ -174,8 +169,8 @@ public class GiftCertificateDto {
         }
     }
 
-    private GiftCertificateDto(int id, String name, String description, BigDecimal price, Period duration,
-                            LocalDateTime createDate, LocalDateTime lastUpdateDate, Set<Tag> tags) {
+    private GiftCertificateDto(int id, String name, String description, BigDecimal price, Integer duration,
+                               String createDate, String lastUpdateDate, Set<Tag> tags) {
         this.id = id;
         this.name = name;
         this.description = description;

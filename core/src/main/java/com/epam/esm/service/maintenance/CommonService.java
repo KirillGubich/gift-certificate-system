@@ -1,13 +1,12 @@
 package com.epam.esm.service.maintenance;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface CommonService<T> {
 
-    boolean create(T dto);
+    T create(T dto);
 
-    Optional<T> read(int id);
+    T read(int id);
 
     List<T> readAll();
 
