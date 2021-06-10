@@ -3,10 +3,10 @@ package com.epam.esm.service.maintenance;
 import com.epam.esm.repository.dao.CommonDao;
 import com.epam.esm.repository.model.Tag;
 import com.epam.esm.service.dto.TagDto;
+import com.epam.esm.service.exception.NoSuchTagException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,6 +23,9 @@ public class TagService implements CommonService<TagDto> {
 
     @Override
     public TagDto create(TagDto dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("null");
+        }
         Tag tag = dao.create(mapToEntity(dto));
         return mapToDto(tag);
     }
@@ -31,8 +34,7 @@ public class TagService implements CommonService<TagDto> {
     public TagDto read(int id) {
         final Optional<Tag> tag = dao.read(id);
         if (!tag.isPresent()) {
-            //todo throw custom Exception
-            throw new RuntimeException();
+            throw new NoSuchTagException(id);
         }
         return mapToDto(tag.get());
     }
@@ -45,7 +47,7 @@ public class TagService implements CommonService<TagDto> {
 
     @Override
     public TagDto update(TagDto dto) {
-        return null; //todo remove or not
+        throw new UnsupportedOperationException("Update operation is not allowed for tag");
     }
 
     @Override

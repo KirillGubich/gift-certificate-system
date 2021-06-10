@@ -1,9 +1,17 @@
 package com.epam.esm.service.dto;
 
+import com.epam.esm.service.validation.ValidationMessageManager;
+import org.hibernate.validator.constraints.NotEmpty;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.util.Objects;
 
 public class TagDto {
     private int id;
+
+    @NotBlank(message = ValidationMessageManager.BLANK_TAG_NAME)
+    @Size(min = 3, max = 50, message = ValidationMessageManager.TAG_NAME_WRONG_SIZE)
     private String name;
 
     public TagDto() {

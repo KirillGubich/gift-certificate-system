@@ -1,10 +1,13 @@
 package com.epam.esm.repository.dao;
 
+import com.epam.esm.repository.exception.AbsenceOfNewlyCreatedException;
+import com.epam.esm.repository.exception.GiftCertificateDuplicateException;
 import com.epam.esm.repository.mapper.GiftCertificateMapper;
 import com.epam.esm.repository.mapper.TagMapper;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -46,7 +49,7 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     private static final String ADD_TAG_TO_CERTIFICATE_SQL = "INSERT INTO certificate_tag (certificate_id, tag_id) " +
             "VALUES (?, ?)";
     private static final String DELETE_CERTIFICATE_TAG_SQL = "DELETE FROM certificate_tag WHERE certificate_id = ? " +
-            "tag_id = ?";
+            "and tag_id = ?";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -77,14 +80,18 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     @Override
     public GiftCertificate create(GiftCertificate entity) {
         LocalDateTime now = LocalDateTime.now();
-        jdbcTemplate.update(CREATE_CERTIFICATE_SQL,
-                entity.getName(),
-                entity.getDescription(),
-                entity.getPrice(),
-                entity.getDuration().getDays(),
-                now,
-                now);
-        return readByName(entity.getName()).orElseThrow(RuntimeException::new); //todo custom exception and add exception handling
+        try {
+            jdbcTemplate.update(CREATE_CERTIFICATE_SQL,
+                    entity.getName(),
+                    entity.getDescription(),
+                    entity.getPrice(),
+                    entity.getDuration().getDays(),
+                    now,
+                    now);
+        } catch (DuplicateKeyException e) {
+            throw new GiftCertificateDuplicateException(entity.getName());
+        }
+        return readByName(entity.getName()).orElseThrow(AbsenceOfNewlyCreatedException::new);
     }
 
     @Override
@@ -92,16 +99,11 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
         return jdbcTemplate.update(DELETE_CERTIFICATE_BY_ID_SQL, id) > 0;
     }
 
-    public GiftCertificate update(GiftCertificate entity) { //todo add exception handling
-        final Optional<GiftCertificate> oldCertificateOptional = read(entity.getId());
-        if (!oldCertificateOptional.isPresent()) {
-            //todo throw custom exception
-            throw new RuntimeException();
-        }
+    public GiftCertificate update(GiftCertificate entity) {
         LocalDateTime now = LocalDateTime.now();
         jdbcTemplate.update(UPDATE_CERTIFICATE_BY_ID_SQL, entity.getName(), entity.getDescription(), entity.getPrice(),
                 entity.getDuration().getDays(), entity.getCreateDate(), now, entity.getId());
-        return read(entity.getId()).orElseThrow(RuntimeException::new); //todo custom exception
+        return read(entity.getId()).orElseThrow(AbsenceOfNewlyCreatedException::new);
     }
 
     public List<GiftCertificate> fetchCertificatesByTagId(int tagId) {

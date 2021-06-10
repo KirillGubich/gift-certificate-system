@@ -1,11 +1,16 @@
 package com.epam.esm.repository.dao;
 
+import com.epam.esm.repository.exception.AbsenceOfNewlyCreatedException;
+import com.epam.esm.repository.exception.TagDuplicateException;
 import com.epam.esm.repository.model.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,8 +50,12 @@ public class TagDao implements CommonDao<Tag> {
     @Override
     public Tag create(Tag entity) {
         final String name = entity.getName();
-        jdbcTemplate.update(CREATE_TAG_SQL, name);
-        return readByName(name).get(); //todo exception handling
+        try {
+            jdbcTemplate.update(CREATE_TAG_SQL, name);
+        } catch (DuplicateKeyException e) {
+            throw new TagDuplicateException(entity.getName());
+        }
+        return readByName(name).orElseThrow(AbsenceOfNewlyCreatedException::new);
     }
 
     @Override

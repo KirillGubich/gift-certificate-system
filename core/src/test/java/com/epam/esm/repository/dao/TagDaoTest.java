@@ -11,6 +11,6 @@ class TagDaoTest {
 
     @Test
     void readAll() {
-        List<Tag> tags = tagDao.readAll();
+//        List<Tag> tags = tagDao.readAll();
     }
 }

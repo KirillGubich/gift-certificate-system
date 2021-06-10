@@ -5,11 +5,13 @@ import com.epam.esm.repository.dao.TagDao;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Tag;
 import com.epam.esm.service.dto.GiftCertificateDto;
+import com.epam.esm.service.exception.NoSuchCertificateException;
+import com.epam.esm.service.exception.NotExistentUpdateException;
+import com.epam.esm.service.validation.GiftCertificateValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,6 +26,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
 
     private GiftCertificateDao certificateDao;
     private TagDao tagDao;
+    private GiftCertificateValidator validator;
 
     @Autowired
     public void setCertificateDao(GiftCertificateDao certificateDao) {
@@ -35,8 +38,16 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         this.tagDao = tagDao;
     }
 
+    @Autowired
+    public void setValidator(GiftCertificateValidator validator) {
+        this.validator = validator;
+    }
+
     @Override
     public GiftCertificateDto create(GiftCertificateDto dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("null");
+        }
         Set<Tag> tags = dto.getTags();
         tags = processForNewTags(tags);
         GiftCertificate giftCertificate = certificateDao.create(mapToModel(dto));
@@ -53,8 +64,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     public GiftCertificateDto read(int id) {
         final Optional<GiftCertificate> giftCertificate = certificateDao.read(id);
         if (!giftCertificate.isPresent()) {
-            //todo throw custom Exception
-            throw new RuntimeException();
+            throw new NoSuchCertificateException(id);
         }
         return mapToDto(giftCertificate.get());
     }
@@ -67,10 +77,13 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
 
     @Override
     public GiftCertificateDto update(GiftCertificateDto dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("null");
+        }
         final int id = dto.getId();
         final Optional<GiftCertificate> giftCertificateOptional = certificateDao.read(id);
         if (!giftCertificateOptional.isPresent()) {
-            throw new RuntimeException(); //todo custom exception
+            throw new NotExistentUpdateException(id);
         }
         final GiftCertificate oldCertificate = giftCertificateOptional.get();
         GiftCertificate giftCertificate = createUpdatedEntity(dto, oldCertificate);
@@ -155,19 +168,24 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         for (Tag tag : tagsToRemove) {
             certificateDao.removeTagFromCertificate(certificateId, tag.getId());
         }
-        processForNewTags(tagsToAdd);
+        tagsToAdd = processForNewTags(tagsToAdd);
         for (Tag tag : tagsToAdd) {
             certificateDao.addTagToCertificate(certificateId, tag.getId());
         }
     }
 
     private GiftCertificate createUpdatedEntity(GiftCertificateDto entity, GiftCertificate oldEntity) {
-        String name = entity.getName().isEmpty() ? oldEntity.getName() : entity.getName();
+        String name = entity.getName() == null ? oldEntity.getName() : entity.getName();
         String description = entity.getDescription() == null ?
                 oldEntity.getDescription() : entity.getDescription();
         BigDecimal price = entity.getPrice() == null ? oldEntity.getPrice() : entity.getPrice();
-        Period duration = entity.getDuration() == null ?
-                oldEntity.getDuration() : Period.ofDays(entity.getDuration());
+        int durationInDays = entity.getDuration() == null ?
+                oldEntity.getDuration().getDays() : entity.getDuration();
+        name = validator.validateName(name);
+        description = validator.validateDescription(description);
+        price = validator.validatePrice(price);
+        durationInDays = validator.validateDuration(durationInDays);
+        Period duration = Period.ofDays(durationInDays);
         return GiftCertificate.builder()
                 .withId(entity.getId())
                 .withName(name)
@@ -175,7 +193,6 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
                 .withPrice(price)
                 .withDuration(duration)
                 .withCreateDate(oldEntity.getCreateDate())
-                .withLastUpdateDate(oldEntity.getLastUpdateDate())
                 .build();
     }
 

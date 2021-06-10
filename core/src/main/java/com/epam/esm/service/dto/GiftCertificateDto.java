@@ -1,17 +1,35 @@
 package com.epam.esm.service.dto;
 
 import com.epam.esm.repository.model.Tag;
+import com.epam.esm.service.validation.ValidationMessageManager;
 
+import javax.validation.constraints.Digits;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Set;
 
 public class GiftCertificateDto {
     private int id;
+
+    @NotBlank(message = ValidationMessageManager.BLANK_CERTIFICATE_NAME)
+    @Size(min = 3, max = 80, message = ValidationMessageManager.CERTIFICATE_NAME_WRONG_SIZE)
     private String name;
+
+    @NotBlank(message = ValidationMessageManager.BLANK_CERTIFICATE_DESCRIPTION)
+    @Size(min = 3, max = 250, message = ValidationMessageManager.CERTIFICATE_DESCRIPTION_WRONG_SIZE)
     private String description;
+
+    @Digits(integer = 10, fraction = 2, message = ValidationMessageManager.CERTIFICATE_PRICE_INVALID)
+    @Positive(message = ValidationMessageManager.CERTIFICATE_PRICE_INVALID)
     private BigDecimal price;
+
+    @Digits(integer = 10, fraction = 0, message = ValidationMessageManager.CERTIFICATE_DURATION_INVALID)
+    @Positive(message = ValidationMessageManager.CERTIFICATE_DURATION_INVALID)
     private Integer duration;
+
     private String createDate;
     private String lastUpdateDate;
     private Set<Tag> tags;
