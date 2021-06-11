@@ -1,6 +1,5 @@
 package com.epam.esm.service.dto;
 
-import com.epam.esm.repository.model.Tag;
 import com.epam.esm.service.validation.ValidationMessageManager;
 
 import javax.validation.constraints.Digits;
@@ -32,7 +31,7 @@ public class GiftCertificateDto {
 
     private String createDate;
     private String lastUpdateDate;
-    private Set<Tag> tags;
+    private Set<TagDto> tags;
 
     private GiftCertificateDto() {
     }
@@ -93,11 +92,11 @@ public class GiftCertificateDto {
         this.lastUpdateDate = lastUpdateDate;
     }
 
-    public Set<Tag> getTags() {
+    public Set<TagDto> getTags() {
         return tags;
     }
 
-    public void setTags(Set<Tag> tags) {
+    public void setTags(Set<TagDto> tags) {
         this.tags = tags;
     }
 
@@ -140,7 +139,7 @@ public class GiftCertificateDto {
         private Integer duration;
         private String createDate;
         private String lastUpdateDate;
-        private Set<Tag> tags;
+        private Set<TagDto> tags;
 
         public Builder withId(int id) {
             this.id = id;
@@ -177,7 +176,7 @@ public class GiftCertificateDto {
             return this;
         }
 
-        public Builder withTags(Set<Tag> tags) {
+        public Builder withTags(Set<TagDto> tags) {
             this.tags = tags;
             return this;
         }
@@ -188,7 +187,7 @@ public class GiftCertificateDto {
     }
 
     private GiftCertificateDto(int id, String name, String description, BigDecimal price, Integer duration,
-                               String createDate, String lastUpdateDate, Set<Tag> tags) {
+                               String createDate, String lastUpdateDate, Set<TagDto> tags) {
         this.id = id;
         this.name = name;
         this.description = description;

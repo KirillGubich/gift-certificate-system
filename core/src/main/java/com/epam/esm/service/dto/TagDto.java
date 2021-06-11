@@ -1,7 +1,6 @@
 package com.epam.esm.service.dto;
 
 import com.epam.esm.service.validation.ValidationMessageManager;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;

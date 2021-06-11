@@ -5,6 +5,7 @@ import com.epam.esm.repository.dao.TagDao;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Tag;
 import com.epam.esm.service.dto.GiftCertificateDto;
+import com.epam.esm.service.dto.TagDto;
 import com.epam.esm.service.exception.NoSuchCertificateException;
 import com.epam.esm.service.exception.NotExistentUpdateException;
 import com.epam.esm.service.validation.GiftCertificateValidator;
@@ -48,15 +49,16 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         if (dto == null) {
             throw new IllegalArgumentException("null");
         }
-        Set<Tag> tags = dto.getTags();
-        tags = processForNewTags(tags);
+        Set<TagDto> tagsDto = dto.getTags();
+        Set<Tag> tags = processForNewTags(tagsDto);
         GiftCertificate giftCertificate = certificateDao.create(mapToModel(dto));
         int certificateId = giftCertificate.getId();
         for (Tag tag : tags) {
             certificateDao.addTagToCertificate(certificateId, tag.getId());
         }
         GiftCertificateDto certificateDto = mapToDto(giftCertificate);
-        certificateDto.setTags(tags);
+        certificateDto.setTags(tags.stream()
+                .map(this::mapTagToDto).collect(Collectors.toSet()));
         return certificateDto;
     }
 
@@ -87,12 +89,18 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         }
         final GiftCertificate oldCertificate = giftCertificateOptional.get();
         GiftCertificate giftCertificate = createUpdatedEntity(dto, oldCertificate);
-        processUpdatedTags(id, oldCertificate.getTags(), dto.getTags());
+        Set<TagDto> oldTags = oldCertificate.getTags().stream().map(this::mapTagToDto).collect(Collectors.toSet());
+        processUpdatedTags(id, oldTags, dto.getTags());
         return mapToDto(certificateDao.update(giftCertificate));
     }
 
     @Override
     public boolean delete(int id) {
+        Optional<GiftCertificate> certificate = certificateDao.read(id);
+        if (!certificate.isPresent()) {
+            throw new NoSuchCertificateException(id);
+        }
+        deleteCertificateConnectionWithTags(id, certificate.get());
         return certificateDao.delete(id);
     }
 
@@ -147,29 +155,29 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         certificates.sort(Comparator.comparing(GiftCertificateDto::getCreateDate).reversed());
     }
 
-    private Set<Tag> processForNewTags(Set<Tag> tags) {
+    private Set<Tag> processForNewTags(Set<TagDto> tags) {
         Set<Tag> updatedTags = new HashSet<>();
-        for (Tag tag : tags) {
+        for (TagDto tag : tags) {
             Optional<Tag> optionalTag = tagDao.readByName(tag.getName());
-            if (!optionalTag.isPresent()) {
-                updatedTags.add(tagDao.create(tag));
-            } else {
+            if (optionalTag.isPresent()) {
                 updatedTags.add(optionalTag.get());
+            } else {
+                updatedTags.add(tagDao.create(mapTagDtoToEntity(tag)));
             }
         }
         return updatedTags;
     }
 
-    private void processUpdatedTags(int certificateId, Set<Tag> oldTags, Set<Tag> newTags) {
-        Set<Tag> tagsToRemove = new HashSet<>(oldTags);
+    private void processUpdatedTags(int certificateId, Set<TagDto> oldTags, Set<TagDto> newTags) {
+        Set<TagDto> tagsToRemove = new HashSet<>(oldTags);
         tagsToRemove.removeAll(newTags);
-        Set<Tag> tagsToAdd = new HashSet<>(newTags);
+        Set<TagDto> tagsToAdd = new HashSet<>(newTags);
         tagsToAdd.removeAll(oldTags);
-        for (Tag tag : tagsToRemove) {
+        for (TagDto tag : tagsToRemove) {
             certificateDao.removeTagFromCertificate(certificateId, tag.getId());
         }
-        tagsToAdd = processForNewTags(tagsToAdd);
-        for (Tag tag : tagsToAdd) {
+        Set<Tag> tags = processForNewTags(tagsToAdd);
+        for (Tag tag : tags) {
             certificateDao.addTagToCertificate(certificateId, tag.getId());
         }
     }
@@ -196,6 +204,13 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
                 .build();
     }
 
+    private void deleteCertificateConnectionWithTags(int id, GiftCertificate certificate) {
+        Set<Tag> tags = certificate.getTags();
+        for (Tag tag : tags) {
+            certificateDao.removeTagFromCertificate(id, tag.getId());
+        }
+    }
+
     private GiftCertificateDto mapToDto(GiftCertificate certificate) {
         return GiftCertificateDto.builder()
                 .withId(certificate.getId())
@@ -205,7 +220,8 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
                 .withDuration(certificate.getDuration().getDays())
                 .withCreateDate(certificate.getCreateDate().toString())
                 .withLastUpdateDate(certificate.getLastUpdateDate().toString())
-                .withTags(certificate.getTags())
+                .withTags(certificate.getTags().stream()
+                        .map(this::mapTagToDto).collect(Collectors.toSet()))
                 .build();
     }
 
@@ -216,7 +232,16 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
                 .withDescription(certificate.getDescription())
                 .withPrice(certificate.getPrice())
                 .withDuration(Period.ofDays(certificate.getDuration()))
-                .withTags(certificate.getTags())
+                .withTags(certificate.getTags().stream()
+                        .map(this::mapTagDtoToEntity).collect(Collectors.toSet()))
                 .build();
+    }
+
+    private TagDto mapTagToDto(Tag tag) {
+        return new TagDto(tag.getId(), tag.getName());
+    }
+
+    private Tag mapTagDtoToEntity(TagDto tagDto) {
+        return new Tag(tagDto.getId(), tagDto.getName());
     }
 }
