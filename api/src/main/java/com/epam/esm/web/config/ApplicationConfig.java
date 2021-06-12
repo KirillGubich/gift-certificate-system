@@ -13,6 +13,9 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.ContentNegotiatingViewResolver;
 
+/**
+ * Configuration class for web initializing web application context.
+ */
 @Configuration
 @EnableWebMvc
 @ComponentScan("com.epam.esm")

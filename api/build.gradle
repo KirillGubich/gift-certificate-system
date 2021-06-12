@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'war'
 }
 
 group 'com.epam'
@@ -14,10 +15,17 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     implementation 'org.springframework:spring-webmvc:5.0.6.RELEASE'
     implementation 'org.hibernate.validator:hibernate-validator:6.1.6.Final'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.9.4'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.4'
     compileOnly 'javax.servlet:servlet-api:2.5'
     implementation project(':core')
 }
 
 test {
     useJUnitPlatform()
+}
+
+war {
+    archiveName 'gift-certificate-system.war'
+    from 'api/src/main/resources'
 }

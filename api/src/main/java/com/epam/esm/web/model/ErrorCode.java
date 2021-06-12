@@ -1,5 +1,8 @@
 package com.epam.esm.web.model;
 
+/**
+ * Class-holder of error messages
+ */
 public class ErrorCode {
 
     public static final int NOT_FOUND_TAG = 40402;

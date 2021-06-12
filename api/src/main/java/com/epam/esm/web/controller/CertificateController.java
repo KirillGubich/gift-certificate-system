@@ -20,6 +20,9 @@ import javax.validation.Valid;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Class controller for interacting with {@link GiftCertificateDto} objects.
+ */
 @RestController
 @RequestMapping("/certificates")
 public class CertificateController {
@@ -30,11 +33,26 @@ public class CertificateController {
     private static final String DATE_SORT_VALUE_PARAMETER = "date";
     private GiftCertificateService service;
 
+    /**
+     * Sets {@link GiftCertificateService}
+     *
+     * @param service - {@link GiftCertificateService} object
+     */
     @Autowired
     public void setService(GiftCertificateService service) {
         this.service = service;
     }
 
+    /**
+     * Gets all {@link GiftCertificateDto} objects taking into account search parameters
+     *
+     * @param tag         tag name
+     * @param sortObject  by which objects to sort
+     * @param sortType    sorting type (asc/desc)
+     * @param searchType  by which parameter to search
+     * @param searchValue value to search
+     * @return - list of {@link GiftCertificateDto}
+     */
     @GetMapping(produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public List<GiftCertificateDto> receiveAllGiftCertificates(
@@ -57,23 +75,49 @@ public class CertificateController {
         return certificates;
     }
 
+    /**
+     * Gets {@link GiftCertificateDto} by id
+     *
+     * @param id {@link GiftCertificateDto} id
+     * @return {@link GiftCertificateDto} with givven id
+     */
     @GetMapping(value = "/{id}", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public GiftCertificateDto receiveGiftCertificate(@PathVariable int id) {
         return service.read(id);
     }
 
+    /**
+     * Creates new gift certificate
+     *
+     * @param giftCertificate {@link GiftCertificateDto} with create parameters
+     * @return newly created {@link GiftCertificateDto}
+     */
     @PostMapping(consumes = "application/json", produces = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
     public GiftCertificateDto createGiftCertificate(@Valid @RequestBody GiftCertificateDto giftCertificate) {
         return service.create(giftCertificate);
     }
 
+    /**
+     * Deletes gift certificate by given id
+     *
+     * @param id gift certificate id
+     * @return server response
+     */
     @DeleteMapping(value = "/{id}")
     public ResponseEntity<?> deleteGiftCertificate(@PathVariable int id) {
-        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Updates gift certificate
+     *
+     * @param id              gift certificate id
+     * @param giftCertificate {@link GiftCertificateDto} object with updated parameters
+     * @return updated {@link GiftCertificateDto}
+     */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public GiftCertificateDto updateGiftCertificate(@PathVariable int id,

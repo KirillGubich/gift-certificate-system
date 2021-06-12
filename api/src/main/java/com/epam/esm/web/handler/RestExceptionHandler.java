@@ -22,7 +22,6 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.io.FileNotFoundException;
@@ -31,6 +30,9 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * Exception handler class. Constructs a response depending on thrown exception.
+ */
 @RestControllerAdvice
 public class RestExceptionHandler {
 
@@ -105,7 +107,7 @@ public class RestExceptionHandler {
     @ExceptionHandler(TagDuplicateException.class)
     public ResponseEntity<ErrorInfo> tagDuplicateCreatingHandle(TagDuplicateException e, Locale locale) {
         String message = messageManager.receiveMessage(TAG_DUPLICATE_PROPERTY, locale);
-        String errorMessage = message + " (name = " + e.getMessage() + ")";
+        String errorMessage = message + " (" + e.getMessage() + ")";
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.CREATE_TAG_DUPLICATE);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
     }
@@ -114,13 +116,13 @@ public class RestExceptionHandler {
     public ResponseEntity<ErrorInfo> certificateDuplicateCreatingHandle(GiftCertificateDuplicateException e,
                                                                         Locale locale) {
         String message = messageManager.receiveMessage(CERTIFICATE_DUPLICATE_PROPERTY, locale);
-        String errorMessage = message + " (name = " + e.getMessage() + ")";
+        String errorMessage = message + " (" + e.getMessage() + ")";
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.CREATE_CERTIFICATE_DUPLICATE);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorInfo> invalidDataHandle(MethodArgumentNotValidException e, WebRequest request) {
+    public ResponseEntity<ErrorInfo> invalidDataHandle(MethodArgumentNotValidException e) {
         ErrorInfo errorInfo = new ErrorInfo(e.getLocalizedMessage(), ErrorCode.INVALID_DATA);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
     }

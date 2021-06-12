@@ -1,5 +1,8 @@
 package com.epam.esm.service.exception;
 
+/**
+ * Thrown when trying to access a non-existent tag
+ */
 public class NoSuchTagException extends RuntimeException {
 
     private int id;

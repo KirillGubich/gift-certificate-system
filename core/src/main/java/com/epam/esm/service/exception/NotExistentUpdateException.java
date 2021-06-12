@@ -1,5 +1,8 @@
 package com.epam.esm.service.exception;
 
+/**
+ * Thrown when trying to update a non-existent entity
+ */
 public class NotExistentUpdateException extends RuntimeException {
 
     private int id;

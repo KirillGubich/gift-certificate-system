@@ -2,6 +2,9 @@ package com.epam.esm.web.model;
 
 import java.util.Objects;
 
+/**
+ * Model for error information representation
+ */
 public class ErrorInfo {
     private final String errorMessage;
     private final int errorCode;
