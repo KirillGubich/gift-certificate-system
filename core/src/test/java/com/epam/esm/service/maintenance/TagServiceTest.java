@@ -59,7 +59,8 @@ class TagServiceTest {
 
     @Test
     void create_throwException_whenParameterNull() {
-        assertThrows(IllegalArgumentException.class, () -> tagService.create(null));
+        assertThrows(IllegalArgumentException.class,
+                () -> tagService.create(null));
     }
 
     @Test
@@ -75,7 +76,8 @@ class TagServiceTest {
     @Test
     void read_throwException_whenTagNotExist() {
         Mockito.when(tagDao.read(Mockito.anyInt())).thenReturn(Optional.empty());
-        assertThrows(NoSuchTagException.class, () -> tagService.read(1));
+        assertThrows(NoSuchTagException.class,
+                () -> tagService.read(1));
     }
 
     @Test
@@ -89,7 +91,8 @@ class TagServiceTest {
 
     @Test
     void update_throwsException_whileMethodNotImplemented() {
-        assertThrows(UnsupportedOperationException.class, () -> tagService.update(Mockito.any(TagDto.class)));
+        assertThrows(UnsupportedOperationException.class,
+                () -> tagService.update(Mockito.any(TagDto.class)));
     }
 
     @Test
