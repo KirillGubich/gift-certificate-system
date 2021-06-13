@@ -13,7 +13,8 @@ public class ErrorMessageManager {
 
     /**
      * Gets localized message from bundle
-     * @param key message key
+     *
+     * @param key    message key
      * @param locale message locale
      * @return localized message
      */

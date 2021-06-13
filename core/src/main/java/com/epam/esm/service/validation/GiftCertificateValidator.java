@@ -27,7 +27,7 @@ public class GiftCertificateValidator {
 
     public BigDecimal validatePrice(BigDecimal price) {
         if (price.compareTo(BigDecimal.ZERO) < 0) {
-             throw new IllegalPriceException("value = " + price.doubleValue());
+            throw new IllegalPriceException("value = " + price.doubleValue());
         }
         return price;
     }

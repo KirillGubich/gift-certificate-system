@@ -86,8 +86,8 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
                     entity.getDescription(),
                     entity.getPrice(),
                     entity.getDuration().getDays(),
-                    now,
-                    now);
+                    now.toString(),
+                    now.toString());
         } catch (DuplicateKeyException e) {
             throw new GiftCertificateDuplicateException(entity.getName());
         }
@@ -102,7 +102,7 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     public GiftCertificate update(GiftCertificate entity) {
         LocalDateTime now = LocalDateTime.now();
         jdbcTemplate.update(UPDATE_CERTIFICATE_BY_ID_SQL, entity.getName(), entity.getDescription(), entity.getPrice(),
-                entity.getDuration().getDays(), entity.getCreateDate(), now, entity.getId());
+                entity.getDuration().getDays(), entity.getCreateDate().toString(), now.toString(), entity.getId());
         return read(entity.getId()).orElseThrow(AbsenceOfNewlyCreatedException::new);
     }
 

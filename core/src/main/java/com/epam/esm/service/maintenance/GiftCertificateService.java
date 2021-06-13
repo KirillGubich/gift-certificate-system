@@ -89,7 +89,9 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         }
         final GiftCertificate oldCertificate = giftCertificateOptional.get();
         GiftCertificate giftCertificate = createUpdatedEntity(dto, oldCertificate);
-        Set<TagDto> oldTags = oldCertificate.getTags().stream().map(this::mapTagToDto).collect(Collectors.toSet());
+        Set<TagDto> oldTags = oldCertificate.getTags().stream()
+                .map(this::mapTagToDto)
+                .collect(Collectors.toSet());
         processUpdatedTags(id, oldTags, dto.getTags());
         return mapToDto(certificateDao.update(giftCertificate));
     }
@@ -169,6 +171,9 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     private void processUpdatedTags(int certificateId, Set<TagDto> oldTags, Set<TagDto> newTags) {
+        if (newTags == null) {
+            newTags = new HashSet<>();
+        }
         Set<TagDto> tagsToRemove = new HashSet<>(oldTags);
         tagsToRemove.removeAll(newTags);
         Set<TagDto> tagsToAdd = new HashSet<>(newTags);
@@ -201,6 +206,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
                 .withPrice(price)
                 .withDuration(duration)
                 .withCreateDate(oldEntity.getCreateDate())
+                .withLastUpdateDate(oldEntity.getLastUpdateDate())
                 .build();
     }
 

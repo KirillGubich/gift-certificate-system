@@ -79,7 +79,7 @@ public class CertificateController {
      * Gets {@link GiftCertificateDto} by id
      *
      * @param id {@link GiftCertificateDto} id
-     * @return {@link GiftCertificateDto} with givven id
+     * @return {@link GiftCertificateDto} with given id
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)

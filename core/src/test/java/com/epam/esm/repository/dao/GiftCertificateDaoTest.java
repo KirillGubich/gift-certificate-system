@@ -1,29 +1,29 @@
 package com.epam.esm.repository.dao;
 
+import com.epam.esm.repository.config.TestConfig;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.Period;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = GiftCertificateDao.class)
+@ContextConfiguration(classes = TestConfig.class)
 class GiftCertificateDaoTest {
 
     @Autowired
@@ -62,10 +62,12 @@ class GiftCertificateDaoTest {
         Set<Tag> tags = new HashSet<>();
         tags.add(new Tag(0, "firstTag"));
         GiftCertificate certificate = GiftCertificate.builder()
+                .withId(1)
                 .withName("test1")
                 .withDescription("after update")
                 .withDuration(Period.ofDays(1))
                 .withPrice(new BigDecimal("50.34"))
+                .withCreateDate(LocalDateTime.now())
                 .withTags(tags)
                 .build();
         GiftCertificate oldCertificate = dao.update(certificate);
@@ -74,7 +76,7 @@ class GiftCertificateDaoTest {
 
     @Test
     public void testDelete() {
-        assertTrue(dao.delete(3));
+        assertTrue(dao.delete(2));
     }
 
     @Test
@@ -91,8 +93,8 @@ class GiftCertificateDaoTest {
 
     @Test
     void fetchCertificatesByPartOfDescription() {
-        List<GiftCertificate> certificates = dao.fetchCertificatesByPartOfDescription("desc");
-        assertEquals(2, certificates.size());
+        List<GiftCertificate> certificates = dao.fetchCertificatesByPartOfDescription("es");
+        assertEquals(1, certificates.size());
     }
 
     @Test
@@ -108,7 +110,7 @@ class GiftCertificateDaoTest {
 
     @Test
     void removeTagFromCertificate() {
-        dao.addTagToCertificate(2, 1);
+        dao.removeTagFromCertificate(2, 1);
         Optional<GiftCertificate> giftCertificate = dao.read(2);
         boolean actual = true;
         if (giftCertificate.isPresent()) {

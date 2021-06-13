@@ -5,14 +5,8 @@ package com.epam.esm.service.exception;
  */
 public class NotExistentUpdateException extends RuntimeException {
 
-    private int id;
+    private final int id;
 
-    public NotExistentUpdateException() {
-    }
-
-    public NotExistentUpdateException(String message) {
-        super(message);
-    }
 
     public NotExistentUpdateException(int id) {
         this.id = id;

@@ -4,12 +4,14 @@ import java.util.List;
 
 /**
  * Interface with common CRUD service operations
+ *
  * @param <T> type parameter
  */
 public interface CommonService<T> {
 
     /**
      * Creates entity
+     *
      * @param dto entity with parameters
      * @return newly created entity
      */
@@ -17,6 +19,7 @@ public interface CommonService<T> {
 
     /**
      * Reads entity by given id
+     *
      * @param id entity id
      * @return entity with given id
      */
@@ -24,12 +27,14 @@ public interface CommonService<T> {
 
     /**
      * Reads all entities
+     *
      * @return list of entities
      */
     List<T> readAll();
 
     /**
      * Updates entity
+     *
      * @param dto entity with parameters
      * @return updated entity
      */
@@ -37,6 +42,7 @@ public interface CommonService<T> {
 
     /**
      * Deletes entity by id
+     *
      * @param id entity id
      * @return true if deleted successfully, else - false
      */
