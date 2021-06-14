@@ -10,6 +10,7 @@ import com.epam.esm.service.exception.IncorrectCertificateNameException;
 import com.epam.esm.service.exception.NoSuchCertificateException;
 import com.epam.esm.service.exception.NoSuchTagException;
 import com.epam.esm.service.exception.NotExistentUpdateException;
+import com.epam.esm.service.validation.ValidationMessageManager;
 import com.epam.esm.web.model.ErrorCode;
 import com.epam.esm.web.model.ErrorInfo;
 import com.epam.esm.web.model.ErrorMessageManager;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -47,6 +49,14 @@ public class RestExceptionHandler {
     private static final String INCORRECT_CERTIFICATE_DESCRIPTION_PROPERTY = "incorrect_certificate_description";
     private static final String INCORRECT_CERTIFICATE_PRICE_PROPERTY = "incorrect_certificate_price";
     private static final String INCORRECT_CERTIFICATE_DURATION_PROPERTY = "incorrect_certificate_duration";
+    private static final String BLANK_TAG_PROPERTY = "blank_tag";
+    private static final String TAG_WRONG_SIZE_PROPERTY = "tag_wrong_size";
+    private static final String CERTIFICATE_NAME_BLANK_PROPERTY = "certificate_name_blank";
+    private static final String CERTIFICATE_DESCRIPTION_BLANK_PROPERTY = "certificate_description_blank";
+    private static final String CERTIFICATE_NAME_WRONG_SIZE_PROPERTY = "certificate_name_wrong_size";
+    private static final String CERTIFICATE_DESCRIPTION_WRONG_SIZE_PROPERTY = "certificate_description_wrong_size";
+    private static final String INVALID_PRICE_PROPERTY = "invalid_price";
+    private static final String DURATION_INVALID_PROPERTY = "duration_invalid";
     private ErrorMessageManager messageManager;
 
     @Autowired
@@ -122,8 +132,57 @@ public class RestExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorInfo> invalidDataHandle(MethodArgumentNotValidException e) {
-        ErrorInfo errorInfo = new ErrorInfo(e.getLocalizedMessage(), ErrorCode.INVALID_DATA);
+    public ResponseEntity<ErrorInfo> invalidDataHandle(MethodArgumentNotValidException e, Locale locale) {
+        StringBuilder responseMessage = new StringBuilder();
+        for (ObjectError err : e.getBindingResult().getAllErrors()) {
+            String errorMessage = err.getDefaultMessage();
+            if (errorMessage != null) {
+                switch (errorMessage) {
+                    case ValidationMessageManager.BLANK_TAG_NAME: {
+                        responseMessage.append(" ")
+                                .append(messageManager.receiveMessage(BLANK_TAG_PROPERTY, locale));
+                        break;
+                    }
+                    case ValidationMessageManager.TAG_NAME_WRONG_SIZE: {
+                        responseMessage.append(" ")
+                                .append(messageManager.receiveMessage(TAG_WRONG_SIZE_PROPERTY, locale));
+                        break;
+                    }
+                    case ValidationMessageManager.BLANK_CERTIFICATE_NAME: {
+                        responseMessage.append(" ")
+                                .append(messageManager.receiveMessage(CERTIFICATE_NAME_BLANK_PROPERTY, locale));
+                        break;
+                    }
+                    case ValidationMessageManager.BLANK_CERTIFICATE_DESCRIPTION: {
+                        responseMessage.append(" ")
+                                .append(messageManager.receiveMessage(CERTIFICATE_DESCRIPTION_BLANK_PROPERTY, locale));
+                        break;
+                    }
+                    case ValidationMessageManager.CERTIFICATE_NAME_WRONG_SIZE: {
+                        responseMessage.append(" ")
+                                .append(messageManager.receiveMessage(CERTIFICATE_NAME_WRONG_SIZE_PROPERTY, locale));
+                        break;
+                    }
+                    case ValidationMessageManager.CERTIFICATE_DESCRIPTION_WRONG_SIZE: {
+                        responseMessage.append(" ")
+                                .append(messageManager
+                                        .receiveMessage(CERTIFICATE_DESCRIPTION_WRONG_SIZE_PROPERTY, locale));
+                        break;
+                    }
+                    case ValidationMessageManager.CERTIFICATE_PRICE_INVALID: {
+                        responseMessage.append(" ")
+                                .append(messageManager.receiveMessage(INVALID_PRICE_PROPERTY, locale));
+                        break;
+                    }
+                    case ValidationMessageManager.CERTIFICATE_DURATION_INVALID: {
+                        responseMessage.append(" ")
+                                .append(messageManager.receiveMessage(DURATION_INVALID_PROPERTY, locale));
+                        break;
+                    }
+                }
+            }
+        }
+        ErrorInfo errorInfo = new ErrorInfo(responseMessage.toString().trim(), ErrorCode.INVALID_DATA);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
     }
 
