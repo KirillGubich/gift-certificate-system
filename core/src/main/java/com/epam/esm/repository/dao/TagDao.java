@@ -2,6 +2,7 @@ package com.epam.esm.repository.dao;
 
 import com.epam.esm.repository.exception.AbsenceOfNewlyCreatedException;
 import com.epam.esm.repository.exception.TagDuplicateException;
+import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
@@ -22,10 +23,12 @@ public class TagDao implements CommonDao<Tag> {
     private static final String CREATE_TAG_SQL = "INSERT INTO tags (name) VALUES (?)";
 
     private final JdbcTemplate jdbcTemplate;
+    private final GiftCertificateDao giftCertificateDao;
 
     @Autowired
-    public TagDao(JdbcTemplate jdbcTemplate) {
+    public TagDao(JdbcTemplate jdbcTemplate, GiftCertificateDao giftCertificateDao) {
         this.jdbcTemplate = jdbcTemplate;
+        this.giftCertificateDao = giftCertificateDao;
     }
 
     @Override
@@ -58,6 +61,10 @@ public class TagDao implements CommonDao<Tag> {
 
     @Override
     public boolean delete(int id) {
+        List<GiftCertificate> certificates = giftCertificateDao.fetchCertificatesByTagId(id);
+        for (GiftCertificate certificate : certificates) {
+            giftCertificateDao.removeTagFromCertificate(certificate.getId(), id);
+        }
         return jdbcTemplate.update(DELETE_TAG_BY_ID_SQL, id) > 0;
     }
 }
