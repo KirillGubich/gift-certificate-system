@@ -22,11 +22,6 @@ import org.springframework.web.servlet.view.ContentNegotiatingViewResolver;
 public class ApplicationConfig implements WebMvcConfigurer {
 
     @Override
-    public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
-        configurer.enable();
-    }
-
-    @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
         configurer.defaultContentType(MediaType.APPLICATION_JSON);
     }
