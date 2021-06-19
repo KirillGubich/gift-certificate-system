@@ -1,22 +1,52 @@
 package com.epam.esm.repository.model;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.Period;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+
+@Entity
+@Table(name = DatabaseInfo.CERTIFICATE_TABLE)
 public class GiftCertificate {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
     private String name;
     private String description;
     private BigDecimal price;
-    private Period duration;
+    private Integer duration;
+
+    @Column(name = DatabaseInfo.CERTIFICATE_CREATE_DATE_COLUMN)
     private LocalDateTime createDate;
+
+    @Column(name = DatabaseInfo.CERTIFICATE_LAST_UPDATE_COLUMN)
     private LocalDateTime lastUpdateDate;
+
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH},
+            fetch = FetchType.EAGER)
+    @JoinTable(name = DatabaseInfo.CERTIFICATE_TAG_TABLE,
+            joinColumns = @JoinColumn(name = DatabaseInfo.CERTIFICATE_ID_COLUMN),
+            inverseJoinColumns = @JoinColumn(name = DatabaseInfo.TAG_ID_COLUMN))
     private Set<Tag> tags;
 
-    private GiftCertificate() {
+    @ManyToMany(mappedBy = "giftCertificates")
+    private List<Order> orders;
+
+    protected GiftCertificate() {
     }
 
     public int getId() {
@@ -51,11 +81,11 @@ public class GiftCertificate {
         this.price = price;
     }
 
-    public Period getDuration() {
+    public Integer getDuration() {
         return duration;
     }
 
-    public void setDuration(Period duration) {
+    public void setDuration(Integer duration) {
         this.duration = duration;
     }
 
@@ -88,8 +118,8 @@ public class GiftCertificate {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GiftCertificate that = (GiftCertificate) o;
-        return id == that.id && duration == that.duration && Objects.equals(name, that.name)
-                && Objects.equals(description, that.description) && Objects.equals(price, that.price)
+        return id == that.id && Objects.equals(name, that.name) && Objects.equals(description, that.description)
+                && Objects.equals(price, that.price) && Objects.equals(duration, that.duration)
                 && Objects.equals(createDate, that.createDate) && Objects.equals(lastUpdateDate, that.lastUpdateDate)
                 && Objects.equals(tags, that.tags);
     }
@@ -122,7 +152,7 @@ public class GiftCertificate {
         private String name;
         private String description;
         private BigDecimal price;
-        private Period duration;
+        private int duration;
         private LocalDateTime createDate;
         private LocalDateTime lastUpdateDate;
         private Set<Tag> tags;
@@ -147,7 +177,7 @@ public class GiftCertificate {
             return this;
         }
 
-        public Builder withDuration(Period duration) {
+        public Builder withDuration(Integer duration) {
             this.duration = duration;
             return this;
         }
@@ -172,7 +202,7 @@ public class GiftCertificate {
         }
     }
 
-    private GiftCertificate(int id, String name, String description, BigDecimal price, Period duration,
+    private GiftCertificate(int id, String name, String description, BigDecimal price, Integer duration,
                             LocalDateTime createDate, LocalDateTime lastUpdateDate, Set<Tag> tags) {
         this.id = id;
         this.name = name;

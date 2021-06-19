@@ -11,14 +11,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.Period;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,7 +35,7 @@ class GiftCertificateDaoTest {
         GiftCertificate certificate = GiftCertificate.builder()
                 .withName("test3")
                 .withDescription("test3")
-                .withDuration(Period.ofDays(1))
+                .withDuration(1)
                 .withPrice(BigDecimal.ONE)
                 .withTags(tags)
                 .build();
@@ -65,7 +63,7 @@ class GiftCertificateDaoTest {
                 .withId(1)
                 .withName("test1")
                 .withDescription("after update")
-                .withDuration(Period.ofDays(1))
+                .withDuration(1)
                 .withPrice(new BigDecimal("50.34"))
                 .withCreateDate(LocalDateTime.now())
                 .withTags(tags)
@@ -80,8 +78,8 @@ class GiftCertificateDaoTest {
     }
 
     @Test
-    void fetchCertificatesByTagId() {
-        List<GiftCertificate> certificates = dao.fetchCertificatesByTagId(1);
+    void fetchCertificatesByTag() {
+        List<GiftCertificate> certificates = dao.fetchCertificatesByTag(new Tag(1, "firstTag"));
         assertEquals(2, certificates.size());
     }
 
@@ -95,27 +93,5 @@ class GiftCertificateDaoTest {
     void fetchCertificatesByPartOfDescription() {
         List<GiftCertificate> certificates = dao.fetchCertificatesByPartOfDescription("es");
         assertEquals(1, certificates.size());
-    }
-
-    @Test
-    void addTagToCertificate() {
-        dao.addTagToCertificate(2, 2);
-        Optional<GiftCertificate> giftCertificate = dao.read(2);
-        boolean actual = false;
-        if (giftCertificate.isPresent()) {
-            actual = giftCertificate.get().getTags().contains(new Tag(2, "secondTag"));
-        }
-        assertTrue(actual);
-    }
-
-    @Test
-    void removeTagFromCertificate() {
-        dao.removeTagFromCertificate(2, 1);
-        Optional<GiftCertificate> giftCertificate = dao.read(2);
-        boolean actual = true;
-        if (giftCertificate.isPresent()) {
-            actual = giftCertificate.get().getTags().contains(new Tag(1, "firstTag"));
-        }
-        assertFalse(actual);
     }
 }

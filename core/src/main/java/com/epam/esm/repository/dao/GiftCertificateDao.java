@@ -2,92 +2,50 @@ package com.epam.esm.repository.dao;
 
 import com.epam.esm.repository.exception.AbsenceOfNewlyCreatedException;
 import com.epam.esm.repository.exception.GiftCertificateDuplicateException;
-import com.epam.esm.repository.mapper.GiftCertificateMapper;
-import com.epam.esm.repository.mapper.TagMapper;
 import com.epam.esm.repository.model.GiftCertificate;
-import com.epam.esm.repository.model.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Repository
 public class GiftCertificateDao implements CommonDao<GiftCertificate> {
 
-    private static final String GET_CERTIFICATE_BY_ID_SQL = "SELECT " +
-            "id, name, description, price, duration, create_date, last_update_date FROM gift_certificates " +
-            "WHERE id = ?";
-    private static final String GET_CERTIFICATE_BY_NAME_SQL = "SELECT " +
-            "id, name, description, price, duration, create_date, last_update_date FROM gift_certificates " +
-            "WHERE name = ?";
-    private static final String GET_ALL_CERTIFICATES_SQL = "SELECT " +
-            "id, name, description, price, duration, create_date, last_update_date FROM gift_certificates";
-    private static final String UPDATE_CERTIFICATE_BY_ID_SQL = "UPDATE gift_certificates " +
-            "SET name = ?, description = ?, price = ?, duration = ?, create_date = ?, last_update_date = ? " +
-            "WHERE id = ?";
-    private static final String DELETE_CERTIFICATE_BY_ID_SQL = "DELETE FROM gift_certificates WHERE id = ?";
-    private static final String CREATE_CERTIFICATE_SQL = "INSERT INTO gift_certificates " +
-            "(name, description, price, duration, create_date, last_update_date) VALUES (?, ?, ?, ?, ?, ?)";
-    private static final String GET_CERTIFICATE_TAGS_SQL = "SELECT tag_id, name FROM certificate_tag " +
-            "LEFT JOIN tags ON certificate_tag.tag_id=tags.id WHERE certificate_id=?";
-    private static final String GET_CERTIFICATES_BY_TAG_ID_SQL = "SELECT " +
-            "id, name, description, price, duration, create_date, last_update_date FROM certificate_tag " +
-            "LEFT JOIN gift_certificates ON certificate_tag.certificate_id=gift_certificates.id WHERE tag_id = ?";
+    private static final String FIND_ALL_QUERY = "SELECT c FROM GiftCertificate as c";
+    private static final String FIND_BY_PART_OF_NAME_QUERY =
+            "SELECT c FROM GiftCertificate as c WHERE c.name LIKE :pattern";
+    private static final String FIND_BY_PART_OF_DESCRIPTION_QUERY =
+            "SELECT c FROM GiftCertificate as c WHERE c.description LIKE :pattern";
+    private static final String FIND_BY_NAME_QUERY = "SELECT c FROM GiftCertificate as c WHERE c.name=:name";
 
-    private static final String GET_CERTIFICATES_BY_NAME_PART_SQL = "SELECT " +
-            "id, name, description, price, duration, create_date, last_update_date FROM gift_certificates " +
-            "WHERE name LIKE ?";
-    private static final String GET_CERTIFICATES_BY_DESCRIPTION_PART_SQL = "SELECT " +
-            "id, name, description, price, duration, create_date, last_update_date FROM gift_certificates " +
-            "WHERE description LIKE ?";
-    private static final String ADD_TAG_TO_CERTIFICATE_SQL = "INSERT INTO certificate_tag (certificate_id, tag_id) " +
-            "VALUES (?, ?)";
-    private static final String DELETE_CERTIFICATE_TAG_SQL = "DELETE FROM certificate_tag WHERE certificate_id = ? " +
-            "and tag_id = ?";
-
-    private final JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    public GiftCertificateDao(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public Optional<GiftCertificate> read(int id) {
-        List<GiftCertificate> queryResult =
-                jdbcTemplate.query(GET_CERTIFICATE_BY_ID_SQL, new GiftCertificateMapper(), id);
-        Optional<GiftCertificate> giftCertificate = queryResult.stream().findFirst();
-        if (giftCertificate.isPresent()) {
-            Set<Tag> tags = fetchCertificateTags(id);
-            giftCertificate.get().setTags(tags);
-        }
-        return giftCertificate;
+        GiftCertificate giftCertificate = entityManager.find(GiftCertificate.class, id);
+        return giftCertificate == null ? Optional.empty() : Optional.of(giftCertificate);
     }
 
     @Override
     public List<GiftCertificate> readAll() {
-        List<GiftCertificate> certificates = jdbcTemplate.query(GET_ALL_CERTIFICATES_SQL, new GiftCertificateMapper());
-        fillCertificateTags(certificates);
-        return certificates;
+        TypedQuery<GiftCertificate> query = entityManager.createQuery(FIND_ALL_QUERY,
+                GiftCertificate.class);
+        return query.getResultList();
     }
 
     @Override
+    @Transactional
     public GiftCertificate create(GiftCertificate entity) {
-        LocalDateTime now = LocalDateTime.now();
         try {
-            jdbcTemplate.update(CREATE_CERTIFICATE_SQL,
-                    entity.getName(),
-                    entity.getDescription(),
-                    entity.getPrice(),
-                    entity.getDuration().getDays(),
-                    now.toString(),
-                    now.toString());
+            entityManager.merge(entity);
+            entityManager.flush();
         } catch (DuplicateKeyException e) {
             throw new GiftCertificateDuplicateException(entity.getName());
         }
@@ -95,69 +53,49 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     }
 
     @Override
+    @Transactional
     public boolean delete(int id) {
-        return jdbcTemplate.update(DELETE_CERTIFICATE_BY_ID_SQL, id) > 0;
+        Optional<GiftCertificate> certificate = read(id);
+        certificate.ifPresent(entityManager::remove);
+        return certificate.isPresent();
     }
 
+    @Transactional
     public GiftCertificate update(GiftCertificate entity) {
-        LocalDateTime now = LocalDateTime.now();
-        jdbcTemplate.update(UPDATE_CERTIFICATE_BY_ID_SQL, entity.getName(), entity.getDescription(), entity.getPrice(),
-                entity.getDuration().getDays(), entity.getCreateDate().toString(), now.toString(), entity.getId());
-        return read(entity.getId()).orElseThrow(AbsenceOfNewlyCreatedException::new);
+        entityManager.merge(entity);
+        entityManager.flush();
+        return readByName(entity.getName()).orElseThrow(AbsenceOfNewlyCreatedException::new);
     }
 
-    public List<GiftCertificate> fetchCertificatesByTagId(int tagId) {
-        final List<GiftCertificate> certificates = jdbcTemplate
-                .query(GET_CERTIFICATES_BY_TAG_ID_SQL, new GiftCertificateMapper(), tagId);
-        fillCertificateTags(certificates);
-        return certificates;
-    }
-
+    @Transactional
     public List<GiftCertificate> fetchCertificatesByPartOfName(String partOfName) {
         String pattern = "%" + partOfName + "%";
-        final List<GiftCertificate> certificates = jdbcTemplate
-                .query(GET_CERTIFICATES_BY_NAME_PART_SQL, new GiftCertificateMapper(), pattern);
-        fillCertificateTags(certificates);
-        return certificates;
+        TypedQuery<GiftCertificate> query = entityManager
+                .createQuery(FIND_BY_PART_OF_NAME_QUERY,
+                        GiftCertificate.class);
+        query.setParameter("pattern", pattern);
+        return query.getResultList();
     }
 
+    @Transactional
     public List<GiftCertificate> fetchCertificatesByPartOfDescription(String partOfDescription) {
         String pattern = "%" + partOfDescription + "%";
-        final List<GiftCertificate> certificates = jdbcTemplate
-                .query(GET_CERTIFICATES_BY_DESCRIPTION_PART_SQL, new GiftCertificateMapper(), pattern);
-        fillCertificateTags(certificates);
-        return certificates;
-    }
-
-    public void addTagToCertificate(int certificateId, int tagId) {
-        jdbcTemplate.update(ADD_TAG_TO_CERTIFICATE_SQL, certificateId, tagId);
-    }
-
-    public void removeTagFromCertificate(int certificateId, int tagId) {
-        jdbcTemplate.update(DELETE_CERTIFICATE_TAG_SQL, certificateId, tagId);
+        TypedQuery<GiftCertificate> query = entityManager
+                .createQuery(FIND_BY_PART_OF_DESCRIPTION_QUERY,
+                        GiftCertificate.class);
+        query.setParameter("pattern", pattern);
+        return query.getResultList();
     }
 
     private Optional<GiftCertificate> readByName(String name) {
-        List<GiftCertificate> queryResult =
-                jdbcTemplate.query(GET_CERTIFICATE_BY_NAME_SQL, new GiftCertificateMapper(), name);
-        Optional<GiftCertificate> giftCertificate = queryResult.stream().findFirst();
-        if (giftCertificate.isPresent()) {
-            Set<Tag> tags = fetchCertificateTags(giftCertificate.get().getId());
-            giftCertificate.get().setTags(tags);
+        try {
+            TypedQuery<GiftCertificate> query = entityManager
+                    .createQuery(FIND_BY_NAME_QUERY, GiftCertificate.class);
+            query.setParameter("name", name);
+            GiftCertificate certificate = query.getSingleResult();
+            return Optional.of(certificate);
+        } catch (NoResultException e) {
+            return Optional.empty();
         }
-        return giftCertificate;
-    }
-
-    private void fillCertificateTags(List<GiftCertificate> certificates) {
-        for (GiftCertificate certificate : certificates) {
-            final Set<Tag> tags = fetchCertificateTags(certificate.getId());
-            certificate.setTags(tags);
-        }
-    }
-
-    private Set<Tag> fetchCertificateTags(int id) {
-        final List<Tag> tagsList =
-                jdbcTemplate.query(GET_CERTIFICATE_TAGS_SQL, new TagMapper(), id);
-        return new HashSet<>(tagsList);
     }
 }

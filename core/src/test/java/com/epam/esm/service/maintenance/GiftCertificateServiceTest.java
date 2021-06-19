@@ -22,7 +22,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.Period;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -78,7 +77,7 @@ class GiftCertificateServiceTest {
                 .withName("TestName")
                 .withDescription("Description")
                 .withPrice(new BigDecimal("12.56"))
-                .withDuration(Period.ofDays(10))
+                .withDuration(10)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(new HashSet<>())
@@ -104,7 +103,7 @@ class GiftCertificateServiceTest {
         int id = 1;
         LocalDateTime now = LocalDateTime.now();
         GiftCertificate certificate = GiftCertificate.builder()
-                .withDuration(Period.ofDays(10))
+                .withDuration(10)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(new HashSet<>())
@@ -131,14 +130,14 @@ class GiftCertificateServiceTest {
         LocalDateTime now = LocalDateTime.now();
         GiftCertificate certificate1 = GiftCertificate.builder()
                 .withId(1)
-                .withDuration(Period.ofDays(10))
+                .withDuration(10)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(new HashSet<>())
                 .build();
         GiftCertificate certificate2 = GiftCertificate.builder()
                 .withId(2)
-                .withDuration(Period.ofDays(20))
+                .withDuration(20)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(new HashSet<>())
@@ -177,7 +176,7 @@ class GiftCertificateServiceTest {
                 .withId(id)
                 .withName("oldName")
                 .withDescription("Description")
-                .withDuration(Period.ofDays(5))
+                .withDuration(5)
                 .withPrice(new BigDecimal("20.00"))
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
@@ -187,7 +186,7 @@ class GiftCertificateServiceTest {
                 .withId(id)
                 .withName("newName")
                 .withDescription("Description")
-                .withDuration(Period.ofDays(10))
+                .withDuration(10)
                 .withPrice(new BigDecimal("20.00"))
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
@@ -225,7 +224,7 @@ class GiftCertificateServiceTest {
         LocalDateTime now = LocalDateTime.now();
         GiftCertificate certificate = GiftCertificate.builder()
                 .withId(1)
-                .withDuration(Period.ofDays(10))
+                .withDuration(10)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(new HashSet<>())
@@ -249,7 +248,7 @@ class GiftCertificateServiceTest {
         GiftCertificate certificate1 = GiftCertificate.builder()
                 .withId(1)
                 .withName("test1")
-                .withDuration(Period.ofDays(10))
+                .withDuration(10)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(tags)
@@ -257,7 +256,7 @@ class GiftCertificateServiceTest {
         GiftCertificate certificate2 = GiftCertificate.builder()
                 .withId(2)
                 .withName("test2")
-                .withDuration(Period.ofDays(20))
+                .withDuration(20)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(tags)
@@ -281,7 +280,7 @@ class GiftCertificateServiceTest {
         List<GiftCertificate> certificates = Arrays.asList(certificate1, certificate2);
         List<GiftCertificateDto> expected = Arrays.asList(dto1, dto2);
         when(tagDao.readByName(tagName)).thenReturn(Optional.of(tag));
-        when(certificateDao.fetchCertificatesByTagId(tagId)).thenReturn(certificates);
+        when(certificateDao.fetchCertificatesByTag(tag)).thenReturn(certificates);
         List<GiftCertificateDto> actual = service.searchByTagName(tagName);
         assertEquals(expected, actual);
     }
@@ -304,7 +303,7 @@ class GiftCertificateServiceTest {
                 .withId(1)
                 .withName("test1")
                 .withDescription("sale 20%")
-                .withDuration(Period.ofDays(10))
+                .withDuration(10)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(tags)
@@ -313,7 +312,7 @@ class GiftCertificateServiceTest {
                 .withId(2)
                 .withName("test2")
                 .withDescription("sale 30%")
-                .withDuration(Period.ofDays(20))
+                .withDuration(20)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(tags)
@@ -357,7 +356,7 @@ class GiftCertificateServiceTest {
         GiftCertificate certificate1 = GiftCertificate.builder()
                 .withId(1)
                 .withName("test1")
-                .withDuration(Period.ofDays(10))
+                .withDuration(10)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(tags)
@@ -365,7 +364,7 @@ class GiftCertificateServiceTest {
         GiftCertificate certificate2 = GiftCertificate.builder()
                 .withId(2)
                 .withName("test2")
-                .withDuration(Period.ofDays(20))
+                .withDuration(20)
                 .withCreateDate(now)
                 .withLastUpdateDate(now)
                 .withTags(tags)

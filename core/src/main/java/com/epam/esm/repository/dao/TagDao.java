@@ -2,69 +2,77 @@ package com.epam.esm.repository.dao;
 
 import com.epam.esm.repository.exception.AbsenceOfNewlyCreatedException;
 import com.epam.esm.repository.exception.TagDuplicateException;
-import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.hibernate.Hibernate;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public class TagDao implements CommonDao<Tag> {
 
-    private static final String GET_TAG_BY_ID_SQL = "SELECT id, name FROM tags WHERE id = ?";
-    private static final String GET_TAG_BY_NAME_SQL = "SELECT id, name FROM tags WHERE name = ?";
-    private static final String GET_ALL_TAGS_SQL = "SELECT id, name FROM tags";
-    private static final String DELETE_TAG_BY_ID_SQL = "DELETE FROM tags WHERE id = ?";
-    private static final String CREATE_TAG_SQL = "INSERT INTO tags (name) VALUES (?)";
+    private static final String FIND_BY_NAME_QUERY = "SELECT t FROM Tag as t WHERE t.name=:name";
+    private static final String FIND_ALL_QUERY = "SELECT t FROM Tag as t";
 
-    private final JdbcTemplate jdbcTemplate;
-    private final GiftCertificateDao giftCertificateDao;
-
-    @Autowired
-    public TagDao(JdbcTemplate jdbcTemplate, GiftCertificateDao giftCertificateDao) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.giftCertificateDao = giftCertificateDao;
-    }
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public Optional<Tag> read(int id) {
-        final List<Tag> queryResult = jdbcTemplate.query(GET_TAG_BY_ID_SQL, new BeanPropertyRowMapper<>(Tag.class), id);
-        return queryResult.stream().findFirst();
+        Tag tag = entityManager.find(Tag.class, id);
+        return tag == null ? Optional.empty() : Optional.of(tag);
+    }
+
+    @Transactional
+    public Optional<Tag> readByName(String name, boolean needCertificates) {
+        try {
+            TypedQuery<Tag> query = entityManager
+                    .createQuery(FIND_BY_NAME_QUERY, Tag.class);
+            query.setParameter("name", name);
+            Tag tag = query.getSingleResult();
+            if (needCertificates) {
+                Hibernate.initialize(tag.getCertificates());
+            }
+            return Optional.of(tag);
+        } catch (NoResultException ex) {
+            return Optional.empty();
+        }
     }
 
     public Optional<Tag> readByName(String name) {
-        final List<Tag> queryResult = jdbcTemplate
-                .query(GET_TAG_BY_NAME_SQL, new BeanPropertyRowMapper<>(Tag.class), name);
-        return queryResult.stream().findFirst();
+        return readByName(name, false);
     }
 
     @Override
     public List<Tag> readAll() {
-        return jdbcTemplate.query(GET_ALL_TAGS_SQL, new BeanPropertyRowMapper<>(Tag.class));
+        TypedQuery<Tag> query = entityManager.createQuery(FIND_ALL_QUERY, Tag.class);
+        return query.getResultList();
     }
 
     @Override
+    @Transactional
     public Tag create(Tag entity) {
-        final String name = entity.getName();
         try {
-            jdbcTemplate.update(CREATE_TAG_SQL, name);
+            entityManager.persist(entity);
+            entityManager.flush();
         } catch (DuplicateKeyException e) {
             throw new TagDuplicateException(entity.getName());
         }
-        return readByName(name).orElseThrow(AbsenceOfNewlyCreatedException::new);
+        return readByName(entity.getName()).orElseThrow(AbsenceOfNewlyCreatedException::new);
     }
 
     @Override
+    @Transactional
     public boolean delete(int id) {
-        List<GiftCertificate> certificates = giftCertificateDao.fetchCertificatesByTagId(id);
-        for (GiftCertificate certificate : certificates) {
-            giftCertificateDao.removeTagFromCertificate(certificate.getId(), id);
-        }
-        return jdbcTemplate.update(DELETE_TAG_BY_ID_SQL, id) > 0;
+        Optional<Tag> tag = read(id);
+        tag.ifPresent(value -> entityManager.remove(value));
+        return tag.isPresent();
     }
 }

@@ -3,6 +3,8 @@ package com.epam.esm.service.maintenance;
 import com.epam.esm.repository.config.TestConfig;
 import com.epam.esm.repository.dao.CommonDao;
 import com.epam.esm.repository.model.Tag;
+import com.epam.esm.service.converter.TagConverter;
+import com.epam.esm.service.converter.TagDtoConverter;
 import com.epam.esm.service.dto.TagDto;
 import com.epam.esm.service.exception.NoSuchTagException;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,12 +35,18 @@ class TagServiceTest {
     @Mock
     private CommonDao<Tag> tagDao;
 
+    @Mock
+    private TagConverter tagConverter;
+
+    @Mock
+    private TagDtoConverter tagDtoConverter;
+
     private TagService tagService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        tagService = new TagService(tagDao);
+        tagService = new TagService(tagDao, tagConverter, tagDtoConverter); //todo fix this
     }
 
     @Test

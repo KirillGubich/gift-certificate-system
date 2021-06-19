@@ -1,17 +1,28 @@
 package com.epam.esm.repository.model;
 
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+import java.util.List;
 import java.util.Objects;
 
+@Entity
+@Table(name = DatabaseInfo.TAG_TABLE)
 public class Tag {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
     private String name;
 
-    public Tag() {
-    }
+    @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
+    private List<GiftCertificate> certificates;
 
-    public Tag(int id, String name) {
-        this.id = id;
-        this.name = name;
+    public Tag() {
     }
 
     public int getId() {
@@ -28,6 +39,10 @@ public class Tag {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public List<GiftCertificate> getCertificates() {
+        return certificates;
     }
 
     @Override

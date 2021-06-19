@@ -4,6 +4,8 @@ import com.epam.esm.repository.dao.GiftCertificateDao;
 import com.epam.esm.repository.dao.TagDao;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Tag;
+import com.epam.esm.service.converter.GiftCertificateConverter;
+import com.epam.esm.service.converter.GiftCertificateDtoConverter;
 import com.epam.esm.service.dto.GiftCertificateDto;
 import com.epam.esm.service.dto.TagDto;
 import com.epam.esm.service.exception.NoSuchCertificateException;
@@ -13,7 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.Period;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -25,23 +28,21 @@ import java.util.stream.Collectors;
 @Service
 public class GiftCertificateService implements CommonService<GiftCertificateDto> {
 
-    private GiftCertificateDao certificateDao;
-    private TagDao tagDao;
-    private GiftCertificateValidator validator;
+    private final GiftCertificateValidator validator;
+    private final GiftCertificateDao certificateDao;
+    private final TagDao tagDao;
+    private final GiftCertificateConverter certificateConverter;
+    private final GiftCertificateDtoConverter certificateDtoConverter;
 
     @Autowired
-    public void setCertificateDao(GiftCertificateDao certificateDao) {
-        this.certificateDao = certificateDao;
-    }
-
-    @Autowired
-    public void setTagDao(TagDao tagDao) {
-        this.tagDao = tagDao;
-    }
-
-    @Autowired
-    public void setValidator(GiftCertificateValidator validator) {
+    public GiftCertificateService(GiftCertificateValidator validator, GiftCertificateDao certificateDao, TagDao tagDao,
+                                  GiftCertificateConverter certificateConverter,
+                                  GiftCertificateDtoConverter certificateDtoConverter) {
         this.validator = validator;
+        this.certificateDao = certificateDao;
+        this.tagDao = tagDao;
+        this.certificateConverter = certificateConverter;
+        this.certificateDtoConverter = certificateDtoConverter;
     }
 
     @Override
@@ -49,17 +50,20 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         if (dto == null) {
             throw new IllegalArgumentException("null");
         }
-        Set<TagDto> tagsDto = dto.getTags();
-        Set<Tag> tags = processForNewTags(tagsDto);
-        GiftCertificate giftCertificate = certificateDao.create(mapToModel(dto));
-        int certificateId = giftCertificate.getId();
-        for (Tag tag : tags) {
-            certificateDao.addTagToCertificate(certificateId, tag.getId());
+        if (dto.getTags() == null) {
+            dto.setTags(new HashSet<>());
         }
-        GiftCertificateDto certificateDto = mapToDto(giftCertificate);
-        certificateDto.setTags(tags.stream()
-                .map(this::mapTagToDto).collect(Collectors.toSet()));
-        return certificateDto;
+        GiftCertificate entity = certificateDtoConverter.convert(dto);
+        if (entity == null) {
+            throw new IllegalArgumentException("null");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        entity.setCreateDate(now);
+        entity.setLastUpdateDate(now);
+        Set<Tag> tags = processTags(dto.getTags());
+        entity.setTags(tags);
+        GiftCertificate giftCertificate = certificateDao.create(entity);
+        return certificateConverter.convert(giftCertificate);
     }
 
     @Override
@@ -68,13 +72,17 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         if (!giftCertificate.isPresent()) {
             throw new NoSuchCertificateException(id);
         }
-        return mapToDto(giftCertificate.get());
+        return certificateConverter.convert(giftCertificate.get());
     }
 
     @Override
     public List<GiftCertificateDto> readAll() {
-        List<GiftCertificate> certificates = certificateDao.readAll();
-        return certificates.stream().map(this::mapToDto).collect(Collectors.toList());
+        Iterable<GiftCertificate> all = certificateDao.readAll();
+        List<GiftCertificate> certificateList = new ArrayList<>();
+        for (GiftCertificate certificate : all) {
+            certificateList.add(certificate);
+        }
+        return certificateList.stream().map(certificateConverter::convert).collect(Collectors.toList());
     }
 
     @Override
@@ -82,27 +90,23 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         if (dto == null) {
             throw new IllegalArgumentException("null");
         }
-        final int id = dto.getId();
-        final Optional<GiftCertificate> giftCertificateOptional = certificateDao.read(id);
-        if (!giftCertificateOptional.isPresent()) {
-            throw new NotExistentUpdateException(id);
+        if (dto.getTags() == null) {
+            dto.setTags(new HashSet<>());
         }
-        final GiftCertificate oldCertificate = giftCertificateOptional.get();
-        GiftCertificate giftCertificate = createUpdatedEntity(dto, oldCertificate);
-        Set<TagDto> oldTags = oldCertificate.getTags().stream()
-                .map(this::mapTagToDto)
-                .collect(Collectors.toSet());
-        processUpdatedTags(id, oldTags, dto.getTags());
-        return mapToDto(certificateDao.update(giftCertificate));
+        Optional<GiftCertificate> giftCertificateOptional = certificateDao.read(dto.getId());
+        if (!giftCertificateOptional.isPresent()) {
+            throw new NotExistentUpdateException(dto.getId());
+        }
+        GiftCertificate entity = giftCertificateOptional.get();
+        updateEntity(entity, dto);
+        Set<Tag> tags = processTags(dto.getTags());
+        entity.setTags(tags);
+        entity.setLastUpdateDate(LocalDateTime.now());
+        return certificateConverter.convert(certificateDao.update(entity));
     }
 
     @Override
     public boolean delete(int id) {
-        Optional<GiftCertificate> certificate = certificateDao.read(id);
-        if (!certificate.isPresent()) {
-            throw new NoSuchCertificateException(id);
-        }
-        deleteCertificateConnectionWithTags(id, certificate.get());
         return certificateDao.delete(id);
     }
 
@@ -110,14 +114,14 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         if (tagName == null) {
             return Collections.emptyList();
         }
-        Optional<Tag> tagOptional = tagDao.readByName(tagName);
+        Optional<Tag> tagOptional = tagDao.readByName(tagName, true);
         if (!tagOptional.isPresent()) {
             return Collections.emptyList();
         }
-        int tagId = tagOptional.get().getId();
-        List<GiftCertificate> certificates = certificateDao.fetchCertificatesByTagId(tagId);
+        Tag tag = tagOptional.get();
+        List<GiftCertificate> certificates = tag.getCertificates();
         return certificates.stream()
-                .map(this::mapToDto)
+                .map(certificateConverter::convert)
                 .collect(Collectors.toList());
     }
 
@@ -127,7 +131,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         }
         List<GiftCertificate> certificates = certificateDao.fetchCertificatesByPartOfName(partOfName);
         return certificates.stream()
-                .map(this::mapToDto)
+                .map(certificateConverter::convert)
                 .collect(Collectors.toList());
     }
 
@@ -137,7 +141,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         }
         List<GiftCertificate> certificates = certificateDao.fetchCertificatesByPartOfDescription(partOfDescription);
         return certificates.stream()
-                .map(this::mapToDto)
+                .map(certificateConverter::convert)
                 .collect(Collectors.toList());
     }
 
@@ -157,97 +161,29 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         certificates.sort(Comparator.comparing(GiftCertificateDto::getCreateDate).reversed());
     }
 
-    private Set<Tag> processForNewTags(Set<TagDto> tags) {
+    private void updateEntity(GiftCertificate entity, GiftCertificateDto dto) {
+        String name = dto.getName() == null ? entity.getName() : dto.getName();
+        String description = dto.getDescription() == null ? entity.getDescription() : dto.getDescription();
+        BigDecimal price = dto.getPrice() == null ? entity.getPrice() : dto.getPrice();
+        int durationInDays = dto.getDuration() == null ? entity.getDuration() : dto.getDuration();
+        entity.setName(validator.validateName(name));
+        entity.setDescription(validator.validateDescription(description));
+        entity.setPrice(validator.validatePrice(price));
+        entity.setDuration(validator.validateDuration(durationInDays));
+    }
+
+    private Set<Tag> processTags(Set<TagDto> tags) {
         Set<Tag> updatedTags = new HashSet<>();
-        for (TagDto tag : tags) {
-            Optional<Tag> optionalTag = tagDao.readByName(tag.getName());
-            if (optionalTag.isPresent()) {
-                updatedTags.add(optionalTag.get());
+        for (TagDto tagDto : tags) {
+            Optional<Tag> tagOptional = tagDao.readByName(tagDto.getName());
+            if (!tagOptional.isPresent()) {
+                Tag tag = new Tag();
+                tag.setName(tagDto.getName());
+                updatedTags.add(tagDao.create(tag));
             } else {
-                updatedTags.add(tagDao.create(mapTagDtoToEntity(tag)));
+                updatedTags.add(tagOptional.get());
             }
         }
         return updatedTags;
-    }
-
-    private void processUpdatedTags(int certificateId, Set<TagDto> oldTags, Set<TagDto> newTags) {
-        if (newTags == null) {
-            newTags = new HashSet<>();
-        }
-        Set<TagDto> tagsToRemove = new HashSet<>(oldTags);
-        tagsToRemove.removeAll(newTags);
-        Set<TagDto> tagsToAdd = new HashSet<>(newTags);
-        tagsToAdd.removeAll(oldTags);
-        for (TagDto tag : tagsToRemove) {
-            certificateDao.removeTagFromCertificate(certificateId, tag.getId());
-        }
-        Set<Tag> tags = processForNewTags(tagsToAdd);
-        for (Tag tag : tags) {
-            certificateDao.addTagToCertificate(certificateId, tag.getId());
-        }
-    }
-
-    private GiftCertificate createUpdatedEntity(GiftCertificateDto entity, GiftCertificate oldEntity) {
-        String name = entity.getName() == null ? oldEntity.getName() : entity.getName();
-        String description = entity.getDescription() == null ?
-                oldEntity.getDescription() : entity.getDescription();
-        BigDecimal price = entity.getPrice() == null ? oldEntity.getPrice() : entity.getPrice();
-        int durationInDays = entity.getDuration() == null ?
-                oldEntity.getDuration().getDays() : entity.getDuration();
-        name = validator.validateName(name);
-        description = validator.validateDescription(description);
-        price = validator.validatePrice(price);
-        durationInDays = validator.validateDuration(durationInDays);
-        Period duration = Period.ofDays(durationInDays);
-        return GiftCertificate.builder()
-                .withId(entity.getId())
-                .withName(name)
-                .withDescription(description)
-                .withPrice(price)
-                .withDuration(duration)
-                .withCreateDate(oldEntity.getCreateDate())
-                .withLastUpdateDate(oldEntity.getLastUpdateDate())
-                .build();
-    }
-
-    private void deleteCertificateConnectionWithTags(int id, GiftCertificate certificate) {
-        Set<Tag> tags = certificate.getTags();
-        for (Tag tag : tags) {
-            certificateDao.removeTagFromCertificate(id, tag.getId());
-        }
-    }
-
-    private GiftCertificateDto mapToDto(GiftCertificate certificate) {
-        return GiftCertificateDto.builder()
-                .withId(certificate.getId())
-                .withName(certificate.getName())
-                .withDescription(certificate.getDescription())
-                .withPrice(certificate.getPrice())
-                .withDuration(certificate.getDuration().getDays())
-                .withCreateDate(certificate.getCreateDate().toString())
-                .withLastUpdateDate(certificate.getLastUpdateDate().toString())
-                .withTags(certificate.getTags().stream()
-                        .map(this::mapTagToDto).collect(Collectors.toSet()))
-                .build();
-    }
-
-    private GiftCertificate mapToModel(GiftCertificateDto certificate) {
-        return GiftCertificate.builder()
-                .withId(certificate.getId())
-                .withName(certificate.getName())
-                .withDescription(certificate.getDescription())
-                .withPrice(certificate.getPrice())
-                .withDuration(Period.ofDays(certificate.getDuration()))
-                .withTags(certificate.getTags().stream()
-                        .map(this::mapTagDtoToEntity).collect(Collectors.toSet()))
-                .build();
-    }
-
-    private TagDto mapTagToDto(Tag tag) {
-        return new TagDto(tag.getId(), tag.getName());
-    }
-
-    private Tag mapTagDtoToEntity(TagDto tagDto) {
-        return new Tag(tagDto.getId(), tagDto.getName());
     }
 }
