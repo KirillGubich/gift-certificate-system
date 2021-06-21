@@ -3,6 +3,7 @@ package com.epam.esm.repository.model;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -32,7 +33,8 @@ public class Order {
     @JoinColumn(name = DatabaseInfo.USER_ID_COLUMN)
     private User user;
 
-    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH},
+    fetch = FetchType.EAGER)
     @JoinTable(name = DatabaseInfo.CERTIFICATE_ORDER_TABLE,
             joinColumns = @JoinColumn(name = DatabaseInfo.ORDER_ID_COLUMN),
             inverseJoinColumns = @JoinColumn(name = DatabaseInfo.CERTIFICATE_ID_COLUMN))

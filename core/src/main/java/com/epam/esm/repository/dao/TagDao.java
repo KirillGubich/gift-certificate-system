@@ -1,6 +1,5 @@
 package com.epam.esm.repository.dao;
 
-import com.epam.esm.repository.exception.AbsenceOfNewlyCreatedException;
 import com.epam.esm.repository.exception.TagDuplicateException;
 import com.epam.esm.repository.model.Tag;
 import org.hibernate.Hibernate;
@@ -57,7 +56,6 @@ public class TagDao implements CommonDao<Tag> {
     }
 
     @Override
-    @Transactional
     public Tag create(Tag entity) {
         try {
             entityManager.persist(entity);
@@ -65,14 +63,13 @@ public class TagDao implements CommonDao<Tag> {
         } catch (DuplicateKeyException e) {
             throw new TagDuplicateException(entity.getName());
         }
-        return readByName(entity.getName()).orElseThrow(AbsenceOfNewlyCreatedException::new);
+        return entity;
     }
 
     @Override
-    @Transactional
     public boolean delete(int id) {
         Optional<Tag> tag = read(id);
-        tag.ifPresent(value -> entityManager.remove(value));
+        tag.ifPresent(entityManager::remove);
         return tag.isPresent();
     }
 }

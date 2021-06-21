@@ -1,11 +1,9 @@
 package com.epam.esm.repository.dao;
 
-import com.epam.esm.repository.exception.AbsenceOfNewlyCreatedException;
 import com.epam.esm.repository.exception.GiftCertificateDuplicateException;
 import com.epam.esm.repository.model.GiftCertificate;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -41,7 +39,6 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     }
 
     @Override
-    @Transactional
     public GiftCertificate create(GiftCertificate entity) {
         try {
             entityManager.merge(entity);
@@ -49,25 +46,22 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
         } catch (DuplicateKeyException e) {
             throw new GiftCertificateDuplicateException(entity.getName());
         }
-        return readByName(entity.getName()).orElseThrow(AbsenceOfNewlyCreatedException::new);
+        return entity;
     }
 
     @Override
-    @Transactional
     public boolean delete(int id) {
         Optional<GiftCertificate> certificate = read(id);
         certificate.ifPresent(entityManager::remove);
         return certificate.isPresent();
     }
 
-    @Transactional
     public GiftCertificate update(GiftCertificate entity) {
         entityManager.merge(entity);
         entityManager.flush();
-        return readByName(entity.getName()).orElseThrow(AbsenceOfNewlyCreatedException::new);
+        return entity;
     }
 
-    @Transactional
     public List<GiftCertificate> fetchCertificatesByPartOfName(String partOfName) {
         String pattern = "%" + partOfName + "%";
         TypedQuery<GiftCertificate> query = entityManager
@@ -77,7 +71,6 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
         return query.getResultList();
     }
 
-    @Transactional
     public List<GiftCertificate> fetchCertificatesByPartOfDescription(String partOfDescription) {
         String pattern = "%" + partOfDescription + "%";
         TypedQuery<GiftCertificate> query = entityManager
@@ -87,7 +80,7 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
         return query.getResultList();
     }
 
-    private Optional<GiftCertificate> readByName(String name) {
+    private Optional<GiftCertificate> readByName(String name) { //todo remove
         try {
             TypedQuery<GiftCertificate> query = entityManager
                     .createQuery(FIND_BY_NAME_QUERY, GiftCertificate.class);

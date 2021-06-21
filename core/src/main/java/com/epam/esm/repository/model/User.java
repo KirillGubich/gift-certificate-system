@@ -29,11 +29,10 @@ public class User {
     public User() {
     }
 
-    public User(int id, String name, String password, List<Order> orders) {
+    public User(int id, String name, String password) {
         this.id = id;
         this.name = name;
         this.password = password;
-        this.orders = orders;
     }
 
     public int getId() {

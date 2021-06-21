@@ -13,8 +13,8 @@ import com.epam.esm.service.exception.NotExistentUpdateException;
 import com.epam.esm.service.validation.GiftCertificateValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +46,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     @Override
+    @Transactional
     public GiftCertificateDto create(GiftCertificateDto dto) {
         if (dto == null) {
             throw new IllegalArgumentException("null");
@@ -86,6 +87,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     @Override
+    @Transactional
     public GiftCertificateDto update(GiftCertificateDto dto) {
         if (dto == null) {
             throw new IllegalArgumentException("null");
@@ -106,6 +108,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     @Override
+    @Transactional
     public boolean delete(int id) {
         return certificateDao.delete(id);
     }
@@ -162,14 +165,18 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     }
 
     private void updateEntity(GiftCertificate entity, GiftCertificateDto dto) {
-        String name = dto.getName() == null ? entity.getName() : dto.getName();
-        String description = dto.getDescription() == null ? entity.getDescription() : dto.getDescription();
-        BigDecimal price = dto.getPrice() == null ? entity.getPrice() : dto.getPrice();
-        int durationInDays = dto.getDuration() == null ? entity.getDuration() : dto.getDuration();
-        entity.setName(validator.validateName(name));
-        entity.setDescription(validator.validateDescription(description));
-        entity.setPrice(validator.validatePrice(price));
-        entity.setDuration(validator.validateDuration(durationInDays));
+        if (dto.getName() != null) {
+            entity.setName(validator.validateName(dto.getName()));
+        }
+       if (dto.getDescription() != null) {
+           entity.setDescription(validator.validateDescription(dto.getDescription()));
+       }
+       if (dto.getDuration() != null) {
+           entity.setDuration(validator.validateDuration(dto.getDuration()));
+       }
+       if (dto.getPrice() != null) {
+           entity.setPrice(validator.validatePrice(dto.getPrice()));
+       }
     }
 
     private Set<Tag> processTags(Set<TagDto> tags) {

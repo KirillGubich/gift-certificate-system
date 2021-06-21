@@ -7,7 +7,8 @@ public class ErrorCode {
 
     public static final int NOT_FOUND_TAG = 40402;
     public static final int NOT_FOUND_CERTIFICATE = 40401;
-    public static final int NEWLY_CREATED_ABSENCE = 50004;
+    public static final int NOT_FOUND_USER = 40403;
+    public static final int NOT_FOUND_ORDER = 40404;
     public static final int ILLEGAL_ARGUMENT = 40007;
     public static final int NOT_EXISTENT_UPDATE = 40006;
     public static final int CREATE_TAG_DUPLICATE = 40008;

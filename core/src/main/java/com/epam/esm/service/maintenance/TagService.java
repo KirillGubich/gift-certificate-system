@@ -8,6 +8,7 @@ import com.epam.esm.service.dto.TagDto;
 import com.epam.esm.service.exception.NoSuchTagException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,7 @@ public class TagService implements CommonService<TagDto> {
     }
 
     @Override
+    @Transactional
     public TagDto create(TagDto dto) {
         if (dto == null) {
             throw new IllegalArgumentException("null");
@@ -53,10 +55,11 @@ public class TagService implements CommonService<TagDto> {
 
     @Override
     public TagDto update(TagDto dto) {
-        throw new UnsupportedOperationException("Update operation is not allowed for tag");
+        throw new UnsupportedOperationException("Tag: update");
     }
 
     @Override
+    @Transactional
     public boolean delete(int id) {
         return tagDao.delete(id);
     }
