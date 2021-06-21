@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -49,8 +48,8 @@ public class CertificateController {
      * @param tag         tag name
      * @param sortObject  by which objects to sort
      * @param sortType    sorting type (asc/desc)
-     * @param searchType  by which parameter to search
-     * @param searchValue value to search
+     * @param name  certificate name
+     * @param description certificate description
      * @return - list of {@link GiftCertificateDto}
      */
     @GetMapping(produces = "application/json")
@@ -59,13 +58,13 @@ public class CertificateController {
             @RequestParam(required = false, name = "tag") String tag,
             @RequestParam(required = false, name = "sort_by") String sortObject,
             @RequestParam(required = false, name = "order_by") String sortType,
-            @RequestParam(required = false, name = "search_by") String searchType,
-            @RequestParam(required = false, name = "search_value") String searchValue) {
+            @RequestParam(required = false, name = "name") String name,
+            @RequestParam(required = false, name = "description") String description) {
         List<GiftCertificateDto> certificates;
-        if (searchType != null) {
-            certificates = searchByParams(searchType, searchValue);
-        } else {
-            certificates = service.readAll();
+        certificates = name != null ? service.searchByPartOfName(name) : service.readAll();
+        if (description != null) {
+            List<GiftCertificateDto> certificatesByDescription = service.searchByPartOfDescription(description);
+            certificates.retainAll(certificatesByDescription);
         }
         if (tag != null) {
             List<GiftCertificateDto> certificatesByTag = service.searchByTagName(tag);
@@ -107,8 +106,7 @@ public class CertificateController {
      */
     @DeleteMapping(value = "/{id}")
     public ResponseEntity<?> deleteGiftCertificate(@PathVariable int id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
+        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();
     }
 
     /**
@@ -124,24 +122,6 @@ public class CertificateController {
                                                     @RequestBody GiftCertificateDto giftCertificate) {
         giftCertificate.setId(id);
         return service.update(giftCertificate);
-    }
-
-    private List<GiftCertificateDto> searchByParams(String searchType, String searchValue) {
-        List<GiftCertificateDto> certificates;
-        switch (searchType) {
-            case "tag":
-                certificates = service.searchByTagName(searchValue);
-                break;
-            case "name":
-                certificates = service.searchByPartOfName(searchValue);
-                break;
-            case "description":
-                certificates = service.searchByPartOfDescription(searchValue);
-                break;
-            default:
-                certificates = Collections.emptyList();
-        }
-        return certificates;
     }
 
     private void processCertificatesSort(List<GiftCertificateDto> certificates, String sortObject, String sortType) {
