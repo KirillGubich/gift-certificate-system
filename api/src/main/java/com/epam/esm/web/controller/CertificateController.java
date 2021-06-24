@@ -1,5 +1,6 @@
 package com.epam.esm.web.controller;
 
+import com.epam.esm.repository.criteria.GiftCertificateCriteria;
 import com.epam.esm.service.dto.GiftCertificateDto;
 import com.epam.esm.service.maintenance.GiftCertificateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,22 +31,21 @@ public class CertificateController {
     private static final String ASCENDING_SORT_TYPE_PARAMETER = "asc";
     private static final String NAME_SORT_VALUE_PARAMETER = "name";
     private static final String DATE_SORT_VALUE_PARAMETER = "date";
-    private GiftCertificateService service;
+    private final GiftCertificateService service;
 
     /**
-     * Sets {@link GiftCertificateService}
-     *
-     * @param service - {@link GiftCertificateService} object
+     * Constructor with service
+     * @param service {@link GiftCertificateService} object
      */
     @Autowired
-    public void setService(GiftCertificateService service) {
+    public CertificateController(GiftCertificateService service) {
         this.service = service;
     }
 
     /**
      * Gets all {@link GiftCertificateDto} objects taking into account search parameters
      *
-     * @param tag         tag name
+     * @param tags        tag names
      * @param sortObject  by which objects to sort
      * @param sortType    sorting type (asc/desc)
      * @param name  certificate name
@@ -55,20 +55,17 @@ public class CertificateController {
     @GetMapping(produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public List<GiftCertificateDto> receiveAllGiftCertificates(
-            @RequestParam(required = false, name = "tag") String tag,
+            @RequestParam(required = false, name = "tags") List<String> tags,
             @RequestParam(required = false, name = "sort_by") String sortObject,
             @RequestParam(required = false, name = "order_by") String sortType,
             @RequestParam(required = false, name = "name") String name,
             @RequestParam(required = false, name = "description") String description) {
         List<GiftCertificateDto> certificates;
-        certificates = name != null ? service.searchByPartOfName(name) : service.readAll();
-        if (description != null) {
-            List<GiftCertificateDto> certificatesByDescription = service.searchByPartOfDescription(description);
-            certificates.retainAll(certificatesByDescription);
-        }
-        if (tag != null) {
-            List<GiftCertificateDto> certificatesByTag = service.searchByTagName(tag);
-            certificates.retainAll(certificatesByTag);
+        if (tags != null || name != null || description != null) {
+            GiftCertificateCriteria criteria = new GiftCertificateCriteria(name, description, tags);
+            certificates = service.searchByCriteria(criteria);
+        } else {
+            certificates = service.readAll();
         }
         processCertificatesSort(certificates, sortObject, sortType);
         return certificates;

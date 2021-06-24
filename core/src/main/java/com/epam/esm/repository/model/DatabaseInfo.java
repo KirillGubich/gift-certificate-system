@@ -1,6 +1,6 @@
 package com.epam.esm.repository.model;
 
-public class DatabaseInfo {
+public final class DatabaseInfo {
     public static final String TAG_TABLE = "tags";
     public static final String CERTIFICATE_TABLE = "gift_certificates";
     public static final String USER_TABLE = "users";
@@ -14,4 +14,7 @@ public class DatabaseInfo {
     public static final String PURCHASE_DATE_COLUMN = "purchase_date";
     public static final String CERTIFICATE_ORDER_TABLE = "certificate_order";
     public static final String TAG_ID_COLUMN = "tag_id";
+
+    private DatabaseInfo() {
+    }
 }

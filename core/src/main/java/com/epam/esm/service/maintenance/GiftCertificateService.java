@@ -1,5 +1,6 @@
 package com.epam.esm.service.maintenance;
 
+import com.epam.esm.repository.criteria.GiftCertificateCriteria;
 import com.epam.esm.repository.dao.GiftCertificateDao;
 import com.epam.esm.repository.dao.TagDao;
 import com.epam.esm.repository.model.GiftCertificate;
@@ -17,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -70,10 +70,9 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     @Override
     public GiftCertificateDto read(int id) {
         final Optional<GiftCertificate> giftCertificate = certificateDao.read(id);
-        if (!giftCertificate.isPresent()) {
-            throw new NoSuchCertificateException(id);
-        }
-        return certificateConverter.convert(giftCertificate.get());
+        GiftCertificate certificate = giftCertificate
+                .orElseThrow(() -> new NoSuchCertificateException(id));
+        return certificateConverter.convert(certificate);
     }
 
     @Override
@@ -96,10 +95,8 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
             dto.setTags(new HashSet<>());
         }
         Optional<GiftCertificate> giftCertificateOptional = certificateDao.read(dto.getId());
-        if (!giftCertificateOptional.isPresent()) {
-            throw new NotExistentUpdateException(dto.getId());
-        }
-        GiftCertificate entity = giftCertificateOptional.get();
+        GiftCertificate entity = giftCertificateOptional
+                .orElseThrow(() -> new NotExistentUpdateException(dto.getId()));
         updateEntity(entity, dto);
         Set<Tag> tags = processTags(dto.getTags());
         entity.setTags(tags);
@@ -113,36 +110,8 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         return certificateDao.delete(id);
     }
 
-    public List<GiftCertificateDto> searchByTagName(String tagName) {
-        if (tagName == null) {
-            return Collections.emptyList();
-        }
-        Optional<Tag> tagOptional = tagDao.readByName(tagName, true);
-        if (!tagOptional.isPresent()) {
-            return Collections.emptyList();
-        }
-        Tag tag = tagOptional.get();
-        List<GiftCertificate> certificates = tag.getCertificates();
-        return certificates.stream()
-                .map(certificateConverter::convert)
-                .collect(Collectors.toList());
-    }
-
-    public List<GiftCertificateDto> searchByPartOfName(String partOfName) {
-        if (partOfName == null) {
-            return Collections.emptyList();
-        }
-        List<GiftCertificate> certificates = certificateDao.fetchCertificatesByPartOfName(partOfName);
-        return certificates.stream()
-                .map(certificateConverter::convert)
-                .collect(Collectors.toList());
-    }
-
-    public List<GiftCertificateDto> searchByPartOfDescription(String partOfDescription) {
-        if (partOfDescription == null) {
-            return Collections.emptyList();
-        }
-        List<GiftCertificate> certificates = certificateDao.fetchCertificatesByPartOfDescription(partOfDescription);
+    public List<GiftCertificateDto> searchByCriteria(GiftCertificateCriteria criteria) {
+        List<GiftCertificate> certificates = certificateDao.searchByCriteria(criteria);
         return certificates.stream()
                 .map(certificateConverter::convert)
                 .collect(Collectors.toList());
@@ -168,15 +137,15 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         if (dto.getName() != null) {
             entity.setName(validator.validateName(dto.getName()));
         }
-       if (dto.getDescription() != null) {
-           entity.setDescription(validator.validateDescription(dto.getDescription()));
-       }
-       if (dto.getDuration() != null) {
-           entity.setDuration(validator.validateDuration(dto.getDuration()));
-       }
-       if (dto.getPrice() != null) {
-           entity.setPrice(validator.validatePrice(dto.getPrice()));
-       }
+        if (dto.getDescription() != null) {
+            entity.setDescription(validator.validateDescription(dto.getDescription()));
+        }
+        if (dto.getDuration() != null) {
+            entity.setDuration(validator.validateDuration(dto.getDuration()));
+        }
+        if (dto.getPrice() != null) {
+            entity.setPrice(validator.validatePrice(dto.getPrice()));
+        }
     }
 
     private Set<Tag> processTags(Set<TagDto> tags) {

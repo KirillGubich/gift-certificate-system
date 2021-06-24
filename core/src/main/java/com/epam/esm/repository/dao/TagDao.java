@@ -2,10 +2,8 @@ package com.epam.esm.repository.dao;
 
 import com.epam.esm.repository.exception.TagDuplicateException;
 import com.epam.esm.repository.model.Tag;
-import org.hibernate.Hibernate;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -29,24 +27,16 @@ public class TagDao implements CommonDao<Tag> {
         return tag == null ? Optional.empty() : Optional.of(tag);
     }
 
-    @Transactional
-    public Optional<Tag> readByName(String name, boolean needCertificates) {
+    public Optional<Tag> readByName(String name) {
         try {
             TypedQuery<Tag> query = entityManager
                     .createQuery(FIND_BY_NAME_QUERY, Tag.class);
             query.setParameter("name", name);
             Tag tag = query.getSingleResult();
-            if (needCertificates) {
-                Hibernate.initialize(tag.getCertificates());
-            }
             return Optional.of(tag);
         } catch (NoResultException ex) {
             return Optional.empty();
         }
-    }
-
-    public Optional<Tag> readByName(String name) {
-        return readByName(name, false);
     }
 
     @Override

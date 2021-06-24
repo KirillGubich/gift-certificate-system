@@ -1,5 +1,6 @@
 package com.epam.esm.web.controller;
 
+import com.epam.esm.service.dto.OrderDto;
 import com.epam.esm.service.dto.UserDto;
 import com.epam.esm.service.maintenance.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,5 +34,11 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public UserDto receiveUser(@PathVariable int id) {
         return service.read(id);
+    }
+
+    @GetMapping(value = "/{id}/orders", produces = "application/json")
+    @ResponseStatus(HttpStatus.OK)
+    public List<OrderDto> receiveUserOrders(@PathVariable int id) {
+        return service.readUserOrders(id);
     }
 }

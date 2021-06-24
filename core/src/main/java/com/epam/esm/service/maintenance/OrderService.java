@@ -63,11 +63,10 @@ public class OrderService implements CommonService<OrderDto> {
 
     @Override
     public OrderDto read(int id) {
-        Optional<Order> order = orderDao.read(id);
-        if (!order.isPresent()) {
-            throw new NoSuchOrderException(id);
-        }
-        return orderConverter.convert(order.get());
+        Optional<Order> orderOptional = orderDao.read(id);
+        Order order = orderOptional
+                .orElseThrow(() -> new NoSuchOrderException(id));
+        return orderConverter.convert(order);
     }
 
     @Override
@@ -85,10 +84,8 @@ public class OrderService implements CommonService<OrderDto> {
             throw new IllegalArgumentException("null");
         }
         Optional<Order> optionalOrder = orderDao.read(dto.getId());
-        if (!optionalOrder.isPresent()) {
-            throw new NoSuchOrderException(dto.getId());
-        }
-        Order order = optionalOrder.get();
+        Order order = optionalOrder
+                .orElseThrow(() -> new NoSuchOrderException(dto.getId()));
         User user = extractUser(dto.getUser());
         List<GiftCertificate> certificates = extractCertificates(dto.getGiftCertificates());
         order.setUser(user);
@@ -105,10 +102,7 @@ public class OrderService implements CommonService<OrderDto> {
 
     private User extractUser(UserDto userDto) {
         Optional<User> user = userDao.read(userDto.getId());
-        if (!user.isPresent()) {
-            throw new NoSuchUserException(userDto.getId());
-        }
-        return user.get();
+        return user.orElseThrow(() -> new NoSuchUserException(userDto.getId()));
     }
 
     private List<GiftCertificate> extractCertificates(List<GiftCertificateDto> certificatesDto) {

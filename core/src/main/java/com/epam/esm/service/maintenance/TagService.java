@@ -40,11 +40,10 @@ public class TagService implements CommonService<TagDto> {
 
     @Override
     public TagDto read(int id) {
-        final Optional<Tag> tag = tagDao.read(id);
-        if (!tag.isPresent()) {
-            throw new NoSuchTagException(id);
-        }
-        return tagConverter.convert(tag.get());
+        final Optional<Tag> tagOptional = tagDao.read(id);
+        Tag tag = tagOptional
+                .orElseThrow(() -> new NoSuchTagException(id));
+        return tagConverter.convert(tag);
     }
 
     @Override

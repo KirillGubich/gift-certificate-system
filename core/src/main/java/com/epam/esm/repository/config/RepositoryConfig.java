@@ -17,6 +17,7 @@ import javax.sql.DataSource;
 @EnableJpaRepositories("com.epam.esm")
 @EntityScan("com.epam.esm")
 @PropertySource("classpath:database.properties")
+@PropertySource("classpath:dev_database.properties")
 public class RepositoryConfig {
 
     @Profile("prod")

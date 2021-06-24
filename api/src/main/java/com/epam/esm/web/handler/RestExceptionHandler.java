@@ -58,8 +58,8 @@ public class RestExceptionHandler {
     private static final String INVALID_USER_NAME_PROPERTY = "user_name_wrong_size";
     private static final String INVALID_PASSWORD_PROPERTY = "user_password_wrong_size";
     private static final String BLANK_USER_NAME_PROPERTY = "user_name_blank";
-    private final String USER_NOT_FOUND_PROPERTY = "user_not_found";
-    private final String ORDER_NOT_FOUND_PROPERTY = "order_not_found";
+    private static final String USER_NOT_FOUND_PROPERTY = "user_not_found";
+    private static final String ORDER_NOT_FOUND_PROPERTY = "order_not_found";
     private ErrorMessageManager messageManager;
 
     @Autowired
@@ -100,8 +100,7 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorInfo> illegalArgumentsHandle(IllegalArgumentException e, Locale locale) {
-        String message = messageManager.receiveMessage(INVALID_ARGUMENT_PROPERTY, locale);
-        String errorMessage = message + " (" + e.getMessage() + ")";
+        String errorMessage = messageManager.receiveMessage(INVALID_ARGUMENT_PROPERTY, locale);
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.ILLEGAL_ARGUMENT);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
     }
