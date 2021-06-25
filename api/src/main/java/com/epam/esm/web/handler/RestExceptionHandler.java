@@ -8,6 +8,7 @@ import com.epam.esm.service.exception.IncorrectCertificateDescriptionException;
 import com.epam.esm.service.exception.IncorrectCertificateNameException;
 import com.epam.esm.service.exception.NoSuchCertificateException;
 import com.epam.esm.service.exception.NoSuchOrderException;
+import com.epam.esm.service.exception.NoSuchPageException;
 import com.epam.esm.service.exception.NoSuchTagException;
 import com.epam.esm.service.exception.NoSuchUserException;
 import com.epam.esm.service.exception.NotExistentUpdateException;
@@ -60,6 +61,7 @@ public class RestExceptionHandler {
     private static final String BLANK_USER_NAME_PROPERTY = "user_name_blank";
     private static final String USER_NOT_FOUND_PROPERTY = "user_not_found";
     private static final String ORDER_NOT_FOUND_PROPERTY = "order_not_found";
+    private final String PAGE_NOT_FOUND_PROPERTY = "page_not_found";
     private ErrorMessageManager messageManager;
 
     @Autowired
@@ -95,6 +97,14 @@ public class RestExceptionHandler {
         String message = messageManager.receiveMessage(ORDER_NOT_FOUND_PROPERTY, locale);
         String errorMessage = message + " (id = " + e.getId() + ")";
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.NOT_FOUND_ORDER);
+        return new ResponseEntity<>(errorInfo, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(NoSuchPageException.class)
+    public ResponseEntity<ErrorInfo> pageNotFoundHandle(NoSuchPageException e, Locale locale) {
+        String message = messageManager.receiveMessage(PAGE_NOT_FOUND_PROPERTY, locale);
+        String errorMessage = message + " (" + e.getPage() + ")";
+        ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.NOT_FOUND_PAGE);
         return new ResponseEntity<>(errorInfo, HttpStatus.NOT_FOUND);
     }
 

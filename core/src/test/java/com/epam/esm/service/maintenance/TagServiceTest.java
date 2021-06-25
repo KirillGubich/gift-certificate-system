@@ -2,6 +2,7 @@ package com.epam.esm.service.maintenance;
 
 import com.epam.esm.repository.config.TestConfig;
 import com.epam.esm.repository.dao.CommonDao;
+import com.epam.esm.repository.dao.TagDao;
 import com.epam.esm.repository.model.Tag;
 import com.epam.esm.service.converter.TagConverter;
 import com.epam.esm.service.converter.TagDtoConverter;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.when;
 class TagServiceTest {
 
     @Mock
-    private CommonDao<Tag> tagDao;
+    private TagDao tagDao;
 
     @Mock
     private TagConverter tagConverter;

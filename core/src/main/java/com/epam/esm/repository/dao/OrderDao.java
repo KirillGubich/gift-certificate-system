@@ -2,16 +2,19 @@ package com.epam.esm.repository.dao;
 
 import com.epam.esm.repository.model.Order;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public class OrderDao implements CommonDao<Order> {
+
+    private static final String PAGE_COUNT_QUERY = "SELECT count(o.id) FROM Order as o";
+    private static final String FIND_ALL_QUERY = "SELECT o FROM Order as o";
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -24,12 +27,18 @@ public class OrderDao implements CommonDao<Order> {
 
     @Override
     public List<Order> readAll() {
-        TypedQuery<Order> query = entityManager.createQuery("SELECT o FROM Order as o", Order.class);
+        TypedQuery<Order> query = entityManager.createQuery(FIND_ALL_QUERY, Order.class);
+        return query.getResultList();
+    }
+
+    public List<Order> readPaginated(int page, int size) {
+        TypedQuery<Order> query = entityManager.createQuery(FIND_ALL_QUERY, Order.class);
+        query.setFirstResult((page - 1) * size);
+        query.setMaxResults(size);
         return query.getResultList();
     }
 
     @Override
-    @Transactional
     public Order create(Order entity) {
         entityManager.persist(entity);
         entityManager.flush();
@@ -37,17 +46,25 @@ public class OrderDao implements CommonDao<Order> {
     }
 
     @Override
-    @Transactional
     public boolean delete(int id) {
         Optional<Order> order = read(id);
         order.ifPresent(entityManager::remove);
         return order.isPresent();
     }
 
-    @Transactional
     public Order update(Order entity) {
         entityManager.merge(entity);
         entityManager.flush();
         return entity;
+    }
+
+    public int fetchNumberOfPages(int size) {
+        Query query = entityManager.createQuery(PAGE_COUNT_QUERY);
+        Long count = (Long) query.getSingleResult();
+        int pages = count.intValue() / size;
+        if (count % size > 0) {
+            pages++;
+        }
+        return pages;
     }
 }

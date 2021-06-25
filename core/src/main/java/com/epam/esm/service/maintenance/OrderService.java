@@ -6,15 +6,15 @@ import com.epam.esm.repository.dao.UserDao;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Order;
 import com.epam.esm.repository.model.User;
-import com.epam.esm.service.converter.OrderConverter;
-import com.epam.esm.service.converter.OrderDtoConverter;
 import com.epam.esm.service.dto.GiftCertificateDto;
 import com.epam.esm.service.dto.OrderDto;
 import com.epam.esm.service.dto.UserDto;
 import com.epam.esm.service.exception.NoSuchCertificateException;
 import com.epam.esm.service.exception.NoSuchOrderException;
+import com.epam.esm.service.exception.NoSuchPageException;
 import com.epam.esm.service.exception.NoSuchUserException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,16 +26,15 @@ import java.util.stream.Collectors;
 
 @Service
 public class OrderService implements CommonService<OrderDto> {
-
     private final OrderDao orderDao;
     private final UserDao userDao;
     private final GiftCertificateDao certificateDao;
-    private final OrderConverter orderConverter;
-    private final OrderDtoConverter orderDtoConverter;
+    private final Converter<Order, OrderDto> orderConverter;
+    private final Converter<OrderDto, Order> orderDtoConverter;
 
     @Autowired
     public OrderService(OrderDao orderDao, UserDao userDao, GiftCertificateDao certificateDao,
-                        OrderConverter orderConverter, OrderDtoConverter orderDtoConverter) {
+                        Converter<Order, OrderDto> orderConverter, Converter<OrderDto, Order> orderDtoConverter) {
         this.orderDao = orderDao;
         this.userDao = userDao;
         this.certificateDao = certificateDao;
@@ -72,6 +71,17 @@ public class OrderService implements CommonService<OrderDto> {
     @Override
     public List<OrderDto> readAll() {
         List<Order> orders = orderDao.readAll();
+        return orders.stream()
+                .map(orderConverter::convert)
+                .collect(Collectors.toList());
+    }
+
+    public List<OrderDto> readPaginated(int page, int size) {
+        int numberOfPages = orderDao.fetchNumberOfPages(size);
+        if (page > numberOfPages) {
+            throw new NoSuchPageException(page);
+        }
+        List<Order> orders = orderDao.readPaginated(page, size);
         return orders.stream()
                 .map(orderConverter::convert)
                 .collect(Collectors.toList());

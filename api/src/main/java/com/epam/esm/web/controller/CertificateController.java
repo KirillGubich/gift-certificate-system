@@ -1,6 +1,8 @@
 package com.epam.esm.web.controller;
 
 import com.epam.esm.repository.criteria.GiftCertificateCriteria;
+import com.epam.esm.repository.model.SortType;
+import com.epam.esm.repository.model.SortValue;
 import com.epam.esm.service.dto.GiftCertificateDto;
 import com.epam.esm.service.maintenance.GiftCertificateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Digits;
+import javax.validation.constraints.Positive;
 import java.util.List;
 
 /**
@@ -27,10 +31,6 @@ import java.util.List;
 @RequestMapping("/certificates")
 public class CertificateController {
 
-    private static final String DESCENDING_SORT_TYPE_PARAMETER = "desc";
-    private static final String ASCENDING_SORT_TYPE_PARAMETER = "asc";
-    private static final String NAME_SORT_VALUE_PARAMETER = "name";
-    private static final String DATE_SORT_VALUE_PARAMETER = "date";
     private final GiftCertificateService service;
 
     /**
@@ -47,9 +47,11 @@ public class CertificateController {
      *
      * @param tags        tag names
      * @param sortObject  by which objects to sort
-     * @param sortType    sorting type (asc/desc)
-     * @param name  certificate name
-     * @param description certificate description
+     * @param sortOrder    sorting type (asc/desc)
+     * @param name  certificate name or part of it
+     * @param description certificate description or part of it
+     * @param page page number
+     * @param size amount of items on page
      * @return - list of {@link GiftCertificateDto}
      */
     @GetMapping(produces = "application/json")
@@ -57,17 +59,25 @@ public class CertificateController {
     public List<GiftCertificateDto> receiveAllGiftCertificates(
             @RequestParam(required = false, name = "tags") List<String> tags,
             @RequestParam(required = false, name = "sort_by") String sortObject,
-            @RequestParam(required = false, name = "order_by") String sortType,
+            @RequestParam(required = false, name = "order_by") String sortOrder,
             @RequestParam(required = false, name = "name") String name,
-            @RequestParam(required = false, name = "description") String description) {
+            @RequestParam(required = false, name = "description") String description,
+            @RequestParam(required = false, name = "page") @Positive @Digits(integer = 4, fraction = 0) Integer page,
+            @RequestParam(required = false, name = "size") @Positive @Digits(integer = 4, fraction = 0) Integer size) {
         List<GiftCertificateDto> certificates;
-        if (tags != null || name != null || description != null) {
-            GiftCertificateCriteria criteria = new GiftCertificateCriteria(name, description, tags);
-            certificates = service.searchByCriteria(criteria);
+        SortType sortType = SortType.of(sortOrder);
+        SortValue sortValue = SortValue.of(sortObject);
+        boolean hasSearchParameters = tags != null || name != null || description != null;
+        boolean needSort = sortObject != null || sortOrder != null;
+        boolean needPagination = page != null && size != null;
+        if (hasSearchParameters) {
+            GiftCertificateCriteria criteria = buildCriteria(tags, name, description, sortType, sortValue);
+            certificates = service.searchByCriteria(criteria, page, size);
+        } else if (needSort || needPagination) {
+            certificates = service.readWithParameters(page, size, sortValue, sortType);
         } else {
             certificates = service.readAll();
         }
-        processCertificatesSort(certificates, sortObject, sortType);
         return certificates;
     }
 
@@ -121,27 +131,14 @@ public class CertificateController {
         return service.update(giftCertificate);
     }
 
-    private void processCertificatesSort(List<GiftCertificateDto> certificates, String sortObject, String sortType) {
-        if (NAME_SORT_VALUE_PARAMETER.equals(sortObject)) {
-            processSortByName(certificates, sortType);
-        } else if (DATE_SORT_VALUE_PARAMETER.equals(sortObject)) {
-            processSortByDate(certificates, sortType);
-        }
-    }
-
-    private void processSortByName(List<GiftCertificateDto> certificates, String sortType) {
-        if (ASCENDING_SORT_TYPE_PARAMETER.equals(sortType)) {
-            service.sortByNameAscending(certificates);
-        } else if (DESCENDING_SORT_TYPE_PARAMETER.equals(sortType)) {
-            service.sortByNameDescending(certificates);
-        }
-    }
-
-    private void processSortByDate(List<GiftCertificateDto> certificates, String sortType) {
-        if (ASCENDING_SORT_TYPE_PARAMETER.equals(sortType)) {
-            service.sortByDateAscending(certificates);
-        } else if (DESCENDING_SORT_TYPE_PARAMETER.equals(sortType)) {
-            service.sortByDateDescending(certificates);
-        }
+    private GiftCertificateCriteria buildCriteria(List<String> tags, String name, String description,
+                                                  SortType sortType, SortValue sortValue) {
+        return GiftCertificateCriteria.builder()
+                .withName(name)
+                .withDescription(description)
+                .withTagNames(tags)
+                .withSortType(sortType)
+                .withSortValue(sortValue)
+                .build();
     }
 }

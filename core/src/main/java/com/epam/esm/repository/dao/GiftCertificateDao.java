@@ -3,12 +3,15 @@ package com.epam.esm.repository.dao;
 import com.epam.esm.repository.criteria.GiftCertificateCriteria;
 import com.epam.esm.repository.exception.GiftCertificateDuplicateException;
 import com.epam.esm.repository.model.GiftCertificate;
+import com.epam.esm.repository.model.SortType;
+import com.epam.esm.repository.model.SortValue;
 import com.epam.esm.repository.model.Tag;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -22,7 +25,7 @@ import java.util.Optional;
 @Repository
 public class GiftCertificateDao implements CommonDao<GiftCertificate> {
 
-    private static final String FIND_ALL_QUERY = "SELECT c FROM GiftCertificate as c";
+    private static final String PAGE_COUNT_QUERY = "SELECT count(c.id) FROM GiftCertificate as c";
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -35,9 +38,31 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
 
     @Override
     public List<GiftCertificate> readAll() {
-        TypedQuery<GiftCertificate> query = entityManager.createQuery(FIND_ALL_QUERY,
-                GiftCertificate.class);
-        return query.getResultList();
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<GiftCertificate> query = criteriaBuilder.createQuery(GiftCertificate.class);
+        Root<GiftCertificate> root = query.from(GiftCertificate.class);
+        query.select(root);
+        TypedQuery<GiftCertificate> typedQuery = entityManager.createQuery(query);
+        return typedQuery.getResultList();
+    }
+
+    public List<GiftCertificate> readWithParameters(Integer page, Integer size, SortValue sortValue,
+                                                    SortType sortType) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<GiftCertificate> query = criteriaBuilder.createQuery(GiftCertificate.class);
+        Root<GiftCertificate> root = query.from(GiftCertificate.class);
+        query.select(root);
+        if (SortType.DESCENDING.equals(sortType)) {
+            query.orderBy(criteriaBuilder.desc(root.get(sortValue.getFieldName())));
+        } else {
+            query.orderBy(criteriaBuilder.asc(root.get(sortValue.getFieldName())));
+        }
+        TypedQuery<GiftCertificate> typedQuery = entityManager.createQuery(query);
+        if (page != null && size != null) {
+            typedQuery.setFirstResult((page - 1) * size);
+            typedQuery.setMaxResults(size);
+        }
+        return typedQuery.getResultList();
     }
 
     @Override
@@ -64,18 +89,48 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
         return entity;
     }
 
-    public List<GiftCertificate> searchByCriteria(GiftCertificateCriteria criteria) {
+    public int fetchNumberOfPages(int size) {
+        Query query = entityManager.createQuery(PAGE_COUNT_QUERY);
+        Long count = (Long) query.getSingleResult();
+        int pages = count.intValue() / size;
+        if (count % size > 0) {
+            pages++;
+        }
+        return pages;
+    }
+
+    public List<GiftCertificate> searchByCriteria(GiftCertificateCriteria criteria, Integer page, Integer size) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<GiftCertificate> query = criteriaBuilder.createQuery(GiftCertificate.class);
         Root<GiftCertificate> root = query.from(GiftCertificate.class);
         query.select(root).distinct(true);
         buildQuery(criteria, criteriaBuilder, query, root);
+        SortValue sortValue = criteria.getSortValue();
+        if (SortType.DESCENDING.equals(criteria.getSortType())) {
+            query.orderBy(criteriaBuilder.desc(root.get(sortValue.getFieldName())));
+        } else {
+            query.orderBy(criteriaBuilder.asc(root.get(sortValue.getFieldName())));
+        }
         TypedQuery<GiftCertificate> typedQuery = entityManager.createQuery(query);
+        if (page != null) {
+            typedQuery.setFirstResult((page - 1) * size);
+        }
+        if (size != null) {
+            typedQuery.setMaxResults(size);
+        }
         return typedQuery.getResultList();
     }
 
     private void buildQuery(GiftCertificateCriteria criteria, CriteriaBuilder criteriaBuilder,
                             CriteriaQuery<GiftCertificate> query, Root<GiftCertificate> root) {
+        List<Predicate> predicates = createPredicates(criteria, criteriaBuilder, query, root);
+        Predicate[] predicatesArray = new Predicate[predicates.size()];
+        predicates.toArray(predicatesArray);
+        query.where(predicatesArray);
+    }
+
+    private List<Predicate> createPredicates(GiftCertificateCriteria criteria, CriteriaBuilder criteriaBuilder,
+                                             CriteriaQuery<GiftCertificate> query, Root<GiftCertificate> root) {
         Join<GiftCertificate, Tag> tags = root.join("tags");
         List<Predicate> predicates = new ArrayList<>();
         if (criteria.getName() != null) {
@@ -97,8 +152,6 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
             query.groupBy(root.get("id"));
             query.having(criteriaBuilder.equal(criteriaBuilder.count(root.get("id")), tagNames.size()));
         }
-        Predicate[] predicatesArray = new Predicate[predicates.size()];
-        predicates.toArray(predicatesArray);
-        query.where(predicatesArray);
+        return predicates;
     }
 }

@@ -1,7 +1,6 @@
 package com.epam.esm.web.controller;
 
 import com.epam.esm.service.dto.TagDto;
-import com.epam.esm.service.maintenance.CommonService;
 import com.epam.esm.service.maintenance.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,10 +11,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Digits;
+import javax.validation.constraints.Positive;
 import java.util.List;
 
 /**
@@ -25,27 +27,34 @@ import java.util.List;
 @RequestMapping("/tags")
 public class TagController {
 
-    private CommonService<TagDto> service;
+    private final TagService service;
 
     /**
-     * Sets {@link TagService}
+     * Constructor with service
      *
      * @param service {@link TagService} object
      */
     @Autowired
-    public void setService(CommonService<TagDto> service) {
+    public TagController(TagService service) {
         this.service = service;
     }
 
     /**
-     * Gets all tags
+     * Receive tags
      *
+     * @param page page number
+     * @param size number of items per page
      * @return list of {@link TagDto}
      */
     @GetMapping(produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
-    public List<TagDto> receiveAllTags() {
-        return service.readAll();
+    public List<TagDto> receiveAllTags(
+            @RequestParam(required = false, name = "page") @Positive @Digits(integer = 4, fraction = 0) Integer page,
+            @RequestParam(required = false, name = "size") @Positive @Digits(integer = 4, fraction = 0) Integer size) {
+        if (page == null || size == null) {
+            return service.readAll();
+        }
+        return service.readPaginated(page, size);
     }
 
     /**
@@ -73,7 +82,7 @@ public class TagController {
     }
 
     /**
-     * Deletes tag by given id
+     * Deletes tag by id
      *
      * @param id tag id
      * @return server response

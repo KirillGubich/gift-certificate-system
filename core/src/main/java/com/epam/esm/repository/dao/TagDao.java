@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,7 @@ public class TagDao implements CommonDao<Tag> {
 
     private static final String FIND_BY_NAME_QUERY = "SELECT t FROM Tag as t WHERE t.name=:name";
     private static final String FIND_ALL_QUERY = "SELECT t FROM Tag as t";
+    private static final String PAGE_COUNT_QUERY = "SELECT count(t.id) FROM Tag as t";
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -45,6 +47,13 @@ public class TagDao implements CommonDao<Tag> {
         return query.getResultList();
     }
 
+    public List<Tag> readPaginated(int page, int size) {
+        TypedQuery<Tag> query = entityManager.createQuery(FIND_ALL_QUERY, Tag.class);
+        query.setFirstResult((page - 1) * size);
+        query.setMaxResults(size);
+        return query.getResultList();
+    }
+
     @Override
     public Tag create(Tag entity) {
         try {
@@ -61,5 +70,15 @@ public class TagDao implements CommonDao<Tag> {
         Optional<Tag> tag = read(id);
         tag.ifPresent(entityManager::remove);
         return tag.isPresent();
+    }
+
+    public int fetchNumberOfPages(int size) {
+        Query query = entityManager.createQuery(PAGE_COUNT_QUERY);
+        Long count = (Long) query.getSingleResult();
+        int pages = count.intValue() / size;
+        if (count % size > 0) {
+            pages++;
+        }
+        return pages;
     }
 }
