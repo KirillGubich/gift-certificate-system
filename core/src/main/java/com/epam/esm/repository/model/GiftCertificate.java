@@ -10,6 +10,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -47,6 +49,18 @@ public class GiftCertificate {
     private List<Order> orders;
 
     protected GiftCertificate() {
+    }
+
+    @PrePersist
+    public void onPrePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        createDate = now;
+        lastUpdateDate = now;
+    }
+
+    @PreUpdate
+    public void onPreUpdate() {
+        lastUpdateDate = LocalDateTime.now();
     }
 
     public int getId() {
