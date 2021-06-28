@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -61,7 +62,8 @@ public class RestExceptionHandler {
     private static final String BLANK_USER_NAME_PROPERTY = "user_name_blank";
     private static final String USER_NOT_FOUND_PROPERTY = "user_not_found";
     private static final String ORDER_NOT_FOUND_PROPERTY = "order_not_found";
-    private final String PAGE_NOT_FOUND_PROPERTY = "page_not_found";
+    private static final String PAGE_NOT_FOUND_PROPERTY = "page_not_found";
+    private static final String INVALID_ACTION_PROPERTY = "invalid_action";
     private ErrorMessageManager messageManager;
 
     @Autowired
@@ -109,7 +111,7 @@ public class RestExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorInfo> illegalArgumentsHandle(IllegalArgumentException e, Locale locale) {
+    public ResponseEntity<ErrorInfo> illegalArgumentsHandle(Locale locale) {
         String errorMessage = messageManager.receiveMessage(INVALID_ARGUMENT_PROPERTY, locale);
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.ILLEGAL_ARGUMENT);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
@@ -120,6 +122,13 @@ public class RestExceptionHandler {
         String message = messageManager.receiveMessage(NON_EXISTING_UPDATE_PROPERTY, locale);
         String errorMessage = message + " (id = " + e.getId() + ")";
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.NOT_EXISTENT_UPDATE);
+        return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
+    public ResponseEntity<ErrorInfo> handleInvalidActions(Locale locale) {
+        String message = messageManager.receiveMessage(INVALID_ACTION_PROPERTY, locale);
+        ErrorInfo errorInfo = new ErrorInfo(message, ErrorCode.INVALID_ACTION);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
     }
 

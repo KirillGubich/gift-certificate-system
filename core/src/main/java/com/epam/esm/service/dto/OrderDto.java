@@ -1,6 +1,7 @@
 package com.epam.esm.service.dto;
 
 import com.epam.esm.service.validation.ValidationMessageManager;
+import org.springframework.hateoas.RepresentationModel;
 
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.Positive;
@@ -8,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
-public class OrderDto {
+public class OrderDto extends RepresentationModel<OrderDto> {
 
     private int id;
 

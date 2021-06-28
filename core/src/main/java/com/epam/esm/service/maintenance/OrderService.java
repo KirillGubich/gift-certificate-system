@@ -110,6 +110,10 @@ public class OrderService implements CommonService<OrderDto> {
         return orderDao.delete(id);
     }
 
+    public int getLastPage(int size) {
+        return orderDao.fetchNumberOfPages(size);
+    }
+
     private User extractUser(UserDto userDto) {
         Optional<User> user = userDao.read(userDto.getId());
         return user.orElseThrow(() -> new NoSuchUserException(userDto.getId()));

@@ -1,12 +1,12 @@
 package com.epam.esm.service.maintenance;
 
 import com.epam.esm.repository.config.TestConfig;
-import com.epam.esm.repository.dao.CommonDao;
 import com.epam.esm.repository.dao.TagDao;
 import com.epam.esm.repository.model.Tag;
 import com.epam.esm.service.converter.TagConverter;
 import com.epam.esm.service.converter.TagDtoConverter;
 import com.epam.esm.service.dto.TagDto;
+import com.epam.esm.service.exception.NoSuchPageException;
 import com.epam.esm.service.exception.NoSuchTagException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ class TagServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        tagService = new TagService(tagDao, tagConverter, tagDtoConverter); //todo fix this
+        tagService = new TagService(tagDao, tagConverter, tagDtoConverter);
     }
 
     @Test
@@ -55,10 +55,12 @@ class TagServiceTest {
         int id = 1;
         Tag tag = new Tag(id, "AnyName");
         TagDto tagDto = new TagDto(0, "AnyName");
+        TagDto createdDto = new TagDto(id, "AnyName");
         when(tagDao.create(any(Tag.class))).thenReturn(tag);
+        when(tagConverter.convert(tag)).thenReturn(createdDto);
+        when(tagDtoConverter.convert(any(TagDto.class))).thenReturn(new Tag(0, "AnyName"));
         TagDto actual = tagService.create(tagDto);
-        TagDto expected = new TagDto(id, "AnyName");
-        assertEquals(expected, actual);
+        assertEquals(createdDto, actual);
     }
 
     @Test
@@ -71,10 +73,11 @@ class TagServiceTest {
     void read_returnTag_whenIdProvided() {
         int id = 1;
         Tag tag = new Tag(id, "AnyName");
+        TagDto tagDto = new TagDto(id, "AnyName");
         when(tagDao.read(id)).thenReturn(Optional.of(tag));
+        when(tagConverter.convert(tag)).thenReturn(tagDto);
         TagDto actual = tagService.read(id);
-        TagDto expected = new TagDto(id, "AnyName");
-        assertEquals(expected, actual);
+        assertEquals(tagDto, actual);
     }
 
     @Test
@@ -86,9 +89,15 @@ class TagServiceTest {
 
     @Test
     void readAll_returnAllTags_whenRequired() {
-        List<Tag> tags = Arrays.asList(new Tag(1, "name1"), new Tag(2, "name2"));
-        List<TagDto> expected = Arrays.asList(new TagDto(1, "name1"), new TagDto(2, "name2"));
+        Tag tag1 = new Tag(1, "name1");
+        Tag tag2 = new Tag(2, "name2");
+        List<Tag> tags = Arrays.asList(tag1, tag2);
+        TagDto tagDto1 = new TagDto(1, "name1");
+        TagDto tagDto2 = new TagDto(2, "name2");
+        List<TagDto> expected = Arrays.asList(tagDto1, tagDto2);
         when(tagDao.readAll()).thenReturn(tags);
+        when(tagConverter.convert(tag1)).thenReturn(tagDto1);
+        when(tagConverter.convert(tag2)).thenReturn(tagDto2);
         List<TagDto> actual = tagService.readAll();
         assertEquals(expected, actual);
     }
@@ -107,5 +116,30 @@ class TagServiceTest {
         when(tagDao.delete(id)).thenReturn(false);
         boolean actual = tagService.delete(id);
         assertFalse(actual);
+    }
+
+    @Test
+    void readPaginated_returnListOfTags_whenCorrectParamsProvided() {
+        Tag tag1 = new Tag(1, "name1");
+        Tag tag2 = new Tag(2, "name2");
+        List<Tag> tags = Arrays.asList(tag1, tag2);
+        TagDto tagDto1 = new TagDto(1, "name1");
+        TagDto tagDto2 = new TagDto(2, "name2");
+        int page = 1;
+        int size = 2;
+        List<TagDto> expected = Arrays.asList(tagDto1, tagDto2);
+        when(tagDao.readPaginated(page, size)).thenReturn(tags);
+        when(tagConverter.convert(tag1)).thenReturn(tagDto1);
+        when(tagConverter.convert(tag2)).thenReturn(tagDto2);
+        when(tagDao.fetchNumberOfPages(size)).thenReturn(1);
+        List<TagDto> actual = tagService.readPaginated(page, size);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void readPaginated_throwException_whenNoSuchPageExist() {
+        when(tagDao.fetchNumberOfPages(anyInt())).thenReturn(1);
+        assertThrows(NoSuchPageException.class,
+                () -> tagService.readPaginated(2, 1));
     }
 }

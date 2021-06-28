@@ -81,4 +81,8 @@ public class UserService implements CommonService<UserDto> {
                 .map(orderConverter::convert)
                 .collect(Collectors.toList());
     }
+
+    public int getLastPage(int size) {
+        return userDao.fetchNumberOfPages(size);
+    }
 }

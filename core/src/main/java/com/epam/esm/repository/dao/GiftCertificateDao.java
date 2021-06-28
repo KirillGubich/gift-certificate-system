@@ -25,8 +25,6 @@ import java.util.Optional;
 @Repository
 public class GiftCertificateDao implements CommonDao<GiftCertificate> {
 
-    private static final String PAGE_COUNT_QUERY = "SELECT count(c.id) FROM GiftCertificate as c";
-
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -34,6 +32,13 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     public Optional<GiftCertificate> read(int id) {
         GiftCertificate giftCertificate = entityManager.find(GiftCertificate.class, id);
         return giftCertificate == null ? Optional.empty() : Optional.of(giftCertificate);
+    }
+
+    private GiftCertificate readByName(String name) {
+        TypedQuery<GiftCertificate> query = entityManager
+                .createQuery("SELECT c FROM GiftCertificate as c WHERE c.name=:name", GiftCertificate.class);
+        query.setParameter("name", name);
+        return query.getSingleResult();
     }
 
     @Override
@@ -73,7 +78,7 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
         } catch (DuplicateKeyException e) {
             throw new GiftCertificateDuplicateException(entity.getName());
         }
-        return entity;
+        return readByName(entity.getName());
     }
 
     @Override
@@ -90,7 +95,7 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     }
 
     public int fetchNumberOfPages(int size) {
-        Query query = entityManager.createQuery(PAGE_COUNT_QUERY);
+        Query query = entityManager.createQuery("SELECT count(c.id) FROM GiftCertificate as c");
         Long count = (Long) query.getSingleResult();
         int pages = count.intValue() / size;
         if (count % size > 0) {

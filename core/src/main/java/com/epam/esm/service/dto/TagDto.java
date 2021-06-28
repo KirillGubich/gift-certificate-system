@@ -1,12 +1,13 @@
 package com.epam.esm.service.dto;
 
 import com.epam.esm.service.validation.ValidationMessageManager;
+import org.springframework.hateoas.RepresentationModel;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.util.Objects;
 
-public class TagDto {
+public class TagDto extends RepresentationModel<TagDto> {
     private int id;
 
     @NotBlank(message = ValidationMessageManager.BLANK_TAG_NAME)

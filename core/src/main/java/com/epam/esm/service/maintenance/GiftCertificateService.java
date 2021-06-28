@@ -18,7 +18,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -57,9 +56,6 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         if (entity == null) {
             throw new IllegalArgumentException("null");
         }
-        LocalDateTime now = LocalDateTime.now();
-        entity.setCreateDate(now);
-        entity.setLastUpdateDate(now);
         Set<Tag> tags = processTags(dto.getTags());
         entity.setTags(tags);
         GiftCertificate giftCertificate = certificateDao.create(entity);
@@ -111,7 +107,6 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         updateEntity(entity, dto);
         Set<Tag> tags = processTags(dto.getTags());
         entity.setTags(tags);
-        entity.setLastUpdateDate(LocalDateTime.now());
         return certificateConverter.convert(certificateDao.update(entity));
     }
 
@@ -126,6 +121,10 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         return certificates.stream()
                 .map(certificateConverter::convert)
                 .collect(Collectors.toList());
+    }
+
+    public int getLastPage(int size) {
+        return certificateDao.fetchNumberOfPages(size);
     }
 
     private void updateEntity(GiftCertificate entity, GiftCertificateDto dto) {

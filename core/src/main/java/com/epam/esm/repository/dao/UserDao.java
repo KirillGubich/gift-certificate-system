@@ -13,9 +13,6 @@ import java.util.Optional;
 @Repository
 public class UserDao implements CommonDao<User> {
 
-    private static final String FIND_ALL_QUERY = "SELECT u FROM User as u";
-    private static final String PAGE_COUNT_QUERY = "SELECT count(u.id) FROM User as u";
-
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -27,12 +24,12 @@ public class UserDao implements CommonDao<User> {
 
     @Override
     public List<User> readAll() {
-        TypedQuery<User> query = entityManager.createQuery(FIND_ALL_QUERY, User.class);
+        TypedQuery<User> query = entityManager.createQuery("SELECT u FROM User as u", User.class);
         return query.getResultList();
     }
 
     public List<User> readPaginated(int page, int size) {
-        TypedQuery<User> query = entityManager.createQuery(FIND_ALL_QUERY, User.class);
+        TypedQuery<User> query = entityManager.createQuery("SELECT u FROM User as u", User.class);
         query.setFirstResult((page - 1) * size);
         query.setMaxResults(size);
         return query.getResultList();
@@ -49,7 +46,7 @@ public class UserDao implements CommonDao<User> {
     }
 
     public int fetchNumberOfPages(int size) {
-        Query query = entityManager.createQuery(PAGE_COUNT_QUERY);
+        Query query = entityManager.createQuery("SELECT count(u.id) FROM User as u");
         Long count = (Long) query.getSingleResult();
         int pages = count.intValue() / size;
         if (count % size > 0) {

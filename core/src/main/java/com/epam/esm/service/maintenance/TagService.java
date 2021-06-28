@@ -74,4 +74,13 @@ public class TagService implements CommonService<TagDto> {
                 .map(tagConverter::convert)
                 .collect(Collectors.toList());
     }
+
+    public TagDto receiveMostUsedTag() {
+        Optional<Tag> tagOptional = tagDao.readMostWidelyUsedTag();
+        return tagOptional.map(tagConverter::convert).orElseThrow(NoSuchTagException::new);
+    }
+
+    public int getLastPage(int size) {
+        return tagDao.fetchNumberOfPages(size);
+    }
 }

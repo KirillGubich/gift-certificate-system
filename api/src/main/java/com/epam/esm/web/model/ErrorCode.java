@@ -14,6 +14,7 @@ public final class ErrorCode {
     public static final int CREATE_TAG_DUPLICATE = 40008;
     public static final int CREATE_CERTIFICATE_DUPLICATE = 40009;
     public static final int INVALID_DATA = 40010;
+    public static final int INVALID_ACTION = 40011;
 
     private ErrorCode() {
     }

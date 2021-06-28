@@ -5,9 +5,11 @@ import com.epam.esm.repository.model.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,12 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@SpringBootTest
 class TagDaoTest {
 
     @Autowired
     private TagDao dao;
 
     @Test
+    @Transactional("hibernateTransactionManager")
     public void testCreate() {
         Tag tag = new Tag(3, "thirdTag");
         assertNotNull(dao.create(tag));
@@ -42,6 +46,7 @@ class TagDaoTest {
     }
 
     @Test
+    @Transactional
     public void testDelete() {
         assertTrue(dao.delete(3));
     }
