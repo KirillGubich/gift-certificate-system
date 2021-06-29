@@ -27,6 +27,9 @@ import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
+/**
+ * Class controller for interacting with {@link OrderDto} objects.
+ */
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
@@ -34,12 +37,25 @@ public class OrderController {
     private final OrderService service;
     private final PaginationManager<OrderDto> paginationManager;
 
+    /**
+     * Constructor with service and pagination manager
+     *
+     * @param service           order service
+     * @param paginationManager order pagination manager
+     */
     @Autowired
     public OrderController(OrderService service, PaginationManager<OrderDto> paginationManager) {
         this.service = service;
         this.paginationManager = paginationManager;
     }
 
+    /**
+     * Gets all orders
+     *
+     * @param page page number
+     * @param size amount of items per page
+     * @return list of {@link OrderDto}
+     */
     @GetMapping(produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public CollectionModel<OrderDto> receiveAllOrders(
@@ -58,6 +74,12 @@ public class OrderController {
         return collectionModel;
     }
 
+    /**
+     * Gets order by id
+     *
+     * @param id order id
+     * @return {@link OrderDto} with given id
+     */
     @GetMapping(value = "/{id}", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public OrderDto receiveOrder(@PathVariable int id) {
@@ -67,6 +89,12 @@ public class OrderController {
         return order;
     }
 
+    /**
+     * Creates order
+     *
+     * @param orderDto {@link OrderDto} object with parameters
+     * @return newly created {@link OrderDto}
+     */
     @PostMapping(consumes = "application/json", produces = "application/json")
     public ResponseEntity<OrderDto> createOrder(@Valid @RequestBody OrderDto orderDto) {
         OrderDto order = service.create(orderDto);
@@ -77,6 +105,13 @@ public class OrderController {
         return new ResponseEntity<>(order, headers, HttpStatus.CREATED);
     }
 
+    /**
+     * Updates order
+     *
+     * @param id       order id
+     * @param orderDto {@link OrderDto} object with parameters
+     * @return updated {@link OrderDto}
+     */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public OrderDto updateOrder(@PathVariable int id, @RequestBody OrderDto orderDto) {
@@ -87,6 +122,12 @@ public class OrderController {
         return order;
     }
 
+    /**
+     * Deletes order
+     *
+     * @param id order id
+     * @return server response
+     */
     @DeleteMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<?> deleteOrder(@PathVariable int id) {
         return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();

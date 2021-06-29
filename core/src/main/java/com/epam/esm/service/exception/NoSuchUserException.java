@@ -1,5 +1,8 @@
 package com.epam.esm.service.exception;
 
+/**
+ * Thrown when trying to access a non-existent user
+ */
 public class NoSuchUserException extends RuntimeException {
 
     private final int id;

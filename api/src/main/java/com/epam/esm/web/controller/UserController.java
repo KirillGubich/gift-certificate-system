@@ -21,6 +21,9 @@ import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
+/**
+ * Class controller for interacting with {@link UserDto} objects.
+ */
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -28,12 +31,25 @@ public class UserController {
     private final UserService service;
     private final PaginationManager<UserDto> paginationManager;
 
+    /**
+     * Constructor with service and pagination manager
+     *
+     * @param service           user service
+     * @param paginationManager user pagination manager
+     */
     @Autowired
     public UserController(UserService service, PaginationManager<UserDto> paginationManager) {
         this.service = service;
         this.paginationManager = paginationManager;
     }
 
+    /**
+     * Gets all users
+     *
+     * @param page page number
+     * @param size number of items per page
+     * @return list of {@link UserDto}
+     */
     @GetMapping(produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public CollectionModel<UserDto> receiveAllUsers(
@@ -52,6 +68,12 @@ public class UserController {
         return collectionModel;
     }
 
+    /**
+     * Gets user by id
+     *
+     * @param id user id
+     * @return {@link UserDto} with given id
+     */
     @GetMapping(value = "/{id}", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public UserDto receiveUser(@PathVariable int id) {
@@ -61,6 +83,12 @@ public class UserController {
         return user;
     }
 
+    /**
+     * Gets all user orders
+     *
+     * @param id user id
+     * @return list of {@link OrderDto}
+     */
     @GetMapping(value = "/{id}/orders", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public List<OrderDto> receiveUserOrders(@PathVariable int id) {
