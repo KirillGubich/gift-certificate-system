@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'war'
+    id 'application'
 }
 
 group 'com.epam'
@@ -28,7 +28,11 @@ test {
     useJUnitPlatform()
 }
 
-war {
-    archiveName 'gift-certificate-system.war'
-    from 'api/src/main/resources'
+apply plugin : "java"
+ext {
+    javaMainClass = "com.epam.esm.web.GiftCertificateApplication"
+}
+
+application {
+    mainClassName = javaMainClass
 }
