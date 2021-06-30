@@ -11,6 +11,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -34,7 +35,7 @@ public class Order {
     private User user;
 
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH},
-    fetch = FetchType.EAGER)
+            fetch = FetchType.EAGER)
     @JoinTable(name = DatabaseInfo.CERTIFICATE_ORDER_TABLE,
             joinColumns = @JoinColumn(name = DatabaseInfo.ORDER_ID_COLUMN),
             inverseJoinColumns = @JoinColumn(name = DatabaseInfo.CERTIFICATE_ID_COLUMN))
@@ -50,6 +51,11 @@ public class Order {
         this.purchaseDate = purchaseDate;
         this.user = user;
         this.giftCertificates = giftCertificates;
+    }
+
+    @PrePersist
+    public void onPrePersist() {
+        purchaseDate = LocalDateTime.now();
     }
 
     public int getId() {

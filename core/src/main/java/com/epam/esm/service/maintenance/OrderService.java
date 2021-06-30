@@ -18,7 +18,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +55,6 @@ public class OrderService implements CommonService<OrderDto> {
         List<GiftCertificate> certificates = extractCertificates(dto.getGiftCertificates());
         order.setUser(user);
         order.setGiftCertificates(certificates);
-        order.setPurchaseDate(LocalDateTime.now());
         return orderConverter.convert(orderDao.create(order));
     }
 

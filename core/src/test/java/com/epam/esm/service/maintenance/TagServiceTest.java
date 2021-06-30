@@ -56,9 +56,11 @@ class TagServiceTest {
         Tag tag = new Tag(id, "AnyName");
         TagDto tagDto = new TagDto(0, "AnyName");
         TagDto createdDto = new TagDto(id, "AnyName");
+
         when(tagDao.create(any(Tag.class))).thenReturn(tag);
         when(tagConverter.convert(tag)).thenReturn(createdDto);
         when(tagDtoConverter.convert(any(TagDto.class))).thenReturn(new Tag(0, "AnyName"));
+
         TagDto actual = tagService.create(tagDto);
         assertEquals(createdDto, actual);
     }
@@ -74,8 +76,10 @@ class TagServiceTest {
         int id = 1;
         Tag tag = new Tag(id, "AnyName");
         TagDto tagDto = new TagDto(id, "AnyName");
+
         when(tagDao.read(id)).thenReturn(Optional.of(tag));
         when(tagConverter.convert(tag)).thenReturn(tagDto);
+
         TagDto actual = tagService.read(id);
         assertEquals(tagDto, actual);
     }
@@ -95,9 +99,11 @@ class TagServiceTest {
         TagDto tagDto1 = new TagDto(1, "name1");
         TagDto tagDto2 = new TagDto(2, "name2");
         List<TagDto> expected = Arrays.asList(tagDto1, tagDto2);
+
         when(tagDao.readAll()).thenReturn(tags);
         when(tagConverter.convert(tag1)).thenReturn(tagDto1);
         when(tagConverter.convert(tag2)).thenReturn(tagDto2);
+
         List<TagDto> actual = tagService.readAll();
         assertEquals(expected, actual);
     }
@@ -128,10 +134,12 @@ class TagServiceTest {
         int page = 1;
         int size = 2;
         List<TagDto> expected = Arrays.asList(tagDto1, tagDto2);
+
         when(tagDao.readPaginated(page, size)).thenReturn(tags);
         when(tagConverter.convert(tag1)).thenReturn(tagDto1);
         when(tagConverter.convert(tag2)).thenReturn(tagDto2);
         when(tagDao.fetchNumberOfPages(size)).thenReturn(1);
+
         List<TagDto> actual = tagService.readPaginated(page, size);
         assertEquals(expected, actual);
     }
@@ -141,5 +149,32 @@ class TagServiceTest {
         when(tagDao.fetchNumberOfPages(anyInt())).thenReturn(1);
         assertThrows(NoSuchPageException.class,
                 () -> tagService.readPaginated(2, 1));
+    }
+
+    @Test
+    void receiveMostUsedTag_getTag_whenItExist() {
+        Tag tag = new Tag(1, "name");
+        TagDto expected = new TagDto(1, "name");
+
+        when(tagDao.readMostWidelyUsedTag()).thenReturn(Optional.of(tag));
+        when(tagConverter.convert(tag)).thenReturn(expected);
+
+        TagDto actual = tagService.receiveMostUsedTag();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void receiveMostUsedTag_getException_whenNotExist() {
+        when(tagDao.readMostWidelyUsedTag()).thenReturn(Optional.empty());
+        assertThrows(NoSuchTagException.class, () -> tagService.receiveMostUsedTag());
+    }
+
+    @Test
+    void getLastPage_receiveLastPageNumber_whenItExist() {
+        int size = 20;
+        int expected = 5;
+        when(tagDao.fetchNumberOfPages(size)).thenReturn(expected);
+        int actual = tagService.getLastPage(size);
+        assertEquals(expected, actual);
     }
 }

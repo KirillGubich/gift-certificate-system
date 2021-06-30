@@ -100,7 +100,7 @@ public class GiftCertificateCriteria {
     }
 
     private GiftCertificateCriteria(String name, String description, List<String> tagNames,
-                                   SortValue sortValue, SortType sortType) {
+                                    SortValue sortValue, SortType sortType) {
         this.name = name;
         this.description = description;
         this.tagNames = tagNames;
