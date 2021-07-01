@@ -24,12 +24,12 @@ public class OrderDao implements CommonDao<Order> {
 
     @Override
     public List<Order> readAll() {
-        TypedQuery<Order> query = entityManager.createQuery("SELECT o FROM Order as o", Order.class);
+        TypedQuery<Order> query = entityManager.createNamedQuery("Order_findAll", Order.class);
         return query.getResultList();
     }
 
     public List<Order> readPaginated(int page, int size) {
-        TypedQuery<Order> query = entityManager.createQuery("SELECT o FROM Order as o", Order.class);
+        TypedQuery<Order> query = entityManager.createNamedQuery("Order_findAll", Order.class);
         query.setFirstResult((page - 1) * size);
         query.setMaxResults(size);
         return query.getResultList();
@@ -56,7 +56,7 @@ public class OrderDao implements CommonDao<Order> {
     }
 
     public int fetchNumberOfPages(int size) {
-        Query query = entityManager.createQuery("SELECT count(o.id) FROM Order as o");
+        Query query = entityManager.createNamedQuery("Order_getAmount");
         Long count = (Long) query.getSingleResult();
         int pages = count.intValue() / size;
         if (count % size > 0) {

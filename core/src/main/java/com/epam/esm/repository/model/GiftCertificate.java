@@ -10,6 +10,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
@@ -22,6 +24,11 @@ import java.util.Set;
 
 @Entity
 @Table(name = DatabaseInfo.CERTIFICATE_TABLE)
+@NamedQueries({
+        @NamedQuery(name = "GiftCertificate_findByName",
+                query = "SELECT c FROM GiftCertificate as c WHERE c.name=:name"),
+        @NamedQuery(name = "GiftCertificate_getAmount", query = "SELECT count(c.id) FROM GiftCertificate as c")
+})
 public class GiftCertificate {
 
     @Id

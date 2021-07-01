@@ -24,12 +24,12 @@ public class UserDao implements CommonDao<User> {
 
     @Override
     public List<User> readAll() {
-        TypedQuery<User> query = entityManager.createQuery("SELECT u FROM User as u", User.class);
+        TypedQuery<User> query = entityManager.createNamedQuery("User_findAll", User.class);
         return query.getResultList();
     }
 
     public List<User> readPaginated(int page, int size) {
-        TypedQuery<User> query = entityManager.createQuery("SELECT u FROM User as u", User.class);
+        TypedQuery<User> query = entityManager.createNamedQuery("User_findAll", User.class);
         query.setFirstResult((page - 1) * size);
         query.setMaxResults(size);
         return query.getResultList();
@@ -46,7 +46,7 @@ public class UserDao implements CommonDao<User> {
     }
 
     public int fetchNumberOfPages(int size) {
-        Query query = entityManager.createQuery("SELECT count(u.id) FROM User as u");
+        Query query = entityManager.createNamedQuery("User_getAmount");
         Long count = (Long) query.getSingleResult();
         int pages = count.intValue() / size;
         if (count % size > 0) {

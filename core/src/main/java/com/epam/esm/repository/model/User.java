@@ -6,6 +6,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.util.List;
@@ -13,6 +15,10 @@ import java.util.Objects;
 
 @Entity
 @Table(name = DatabaseInfo.USER_TABLE)
+@NamedQueries({
+        @NamedQuery(name = "User_findAll", query = "SELECT u FROM User as u"),
+        @NamedQuery(name = "User_getAmount", query = "SELECT count(u.id) FROM User as u")
+})
 public class User {
 
     @Id

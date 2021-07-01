@@ -11,6 +11,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import java.math.BigDecimal;
@@ -20,6 +22,10 @@ import java.util.Objects;
 
 @Entity
 @Table(name = DatabaseInfo.ORDER_TABLE)
+@NamedQueries({
+        @NamedQuery(name = "Order_findAll", query = "SELECT o FROM Order as o"),
+        @NamedQuery(name = "Order_getAmount", query = "SELECT count(o.id) FROM Order as o")
+})
 public class Order {
 
     @Id

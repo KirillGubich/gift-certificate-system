@@ -2,6 +2,7 @@ package com.epam.esm.repository.dao;
 
 import com.epam.esm.repository.criteria.GiftCertificateCriteria;
 import com.epam.esm.repository.exception.GiftCertificateDuplicateException;
+import com.epam.esm.repository.model.DatabaseInfo;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.SortType;
 import com.epam.esm.repository.model.SortValue;
@@ -36,7 +37,7 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
 
     private GiftCertificate readByName(String name) {
         TypedQuery<GiftCertificate> query = entityManager
-                .createQuery("SELECT c FROM GiftCertificate as c WHERE c.name=:name", GiftCertificate.class);
+                .createNamedQuery("GiftCertificate_findByName", GiftCertificate.class);
         query.setParameter("name", name);
         return query.getSingleResult();
     }
@@ -95,7 +96,7 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
     }
 
     public int fetchNumberOfPages(int size) {
-        Query query = entityManager.createQuery("SELECT count(c.id) FROM GiftCertificate as c");
+        Query query = entityManager.createNamedQuery("GiftCertificate_getAmount");
         Long count = (Long) query.getSingleResult();
         int pages = count.intValue() / size;
         if (count % size > 0) {
@@ -136,19 +137,21 @@ public class GiftCertificateDao implements CommonDao<GiftCertificate> {
 
     private List<Predicate> createPredicates(GiftCertificateCriteria criteria, CriteriaBuilder criteriaBuilder,
                                              CriteriaQuery<GiftCertificate> query, Root<GiftCertificate> root) {
-        Join<GiftCertificate, Tag> tags = root.join("tags");
+        Join<GiftCertificate, Tag> tags = root.join(DatabaseInfo.TAG_TABLE);
         List<Predicate> predicates = new ArrayList<>();
         if (criteria.getName() != null) {
-            Predicate predicateForName = criteriaBuilder.like(root.get("name"), "%" + criteria.getName() + "%");
+            Predicate predicateForName = criteriaBuilder.like(root.get(DatabaseInfo.CERTIFICATE_NAME_COLUMN),
+                    "%" + criteria.getName() + "%");
             predicates.add(predicateForName);
         }
         if (criteria.getDescription() != null) {
             Predicate predicateForDescription =
-                    criteriaBuilder.like(root.get("description"), "%" + criteria.getDescription() + "%");
+                    criteriaBuilder.like(root.get(DatabaseInfo.CERTIFICATE_DESCRIPTION_COLUMN),
+                            "%" + criteria.getDescription() + "%");
             predicates.add(predicateForDescription);
         }
         if (criteria.getTagNames() != null && !(criteria.getTagNames().isEmpty())) {
-            CriteriaBuilder.In<String> inTags = criteriaBuilder.in(tags.get("name"));
+            CriteriaBuilder.In<String> inTags = criteriaBuilder.in(tags.get(DatabaseInfo.TAG_NAME_COLUMN));
             List<String> tagNames = criteria.getTagNames();
             for (String tagName : tagNames) {
                 inTags.value(tagName);

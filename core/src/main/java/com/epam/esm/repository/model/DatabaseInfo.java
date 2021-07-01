@@ -5,6 +5,9 @@ public final class DatabaseInfo {
     public static final String CERTIFICATE_TABLE = "gift_certificates";
     public static final String USER_TABLE = "users";
     public static final String ORDER_TABLE = "orders";
+    public static final String TAG_NAME_COLUMN = "name";
+    public static final String CERTIFICATE_NAME_COLUMN = "name";
+    public static final String CERTIFICATE_DESCRIPTION_COLUMN = "description";
     public static final String CERTIFICATE_CREATE_DATE_COLUMN = "create_date";
     public static final String CERTIFICATE_LAST_UPDATE_COLUMN = "last_update_date";
     public static final String CERTIFICATE_TAG_TABLE = "certificate_tag";

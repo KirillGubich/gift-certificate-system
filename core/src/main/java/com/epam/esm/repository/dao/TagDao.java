@@ -16,13 +16,6 @@ import java.util.Optional;
 @Repository
 public class TagDao implements CommonDao<Tag> {
 
-    private static final String MOST_USED_TAG_QUERY = "SELECT id, name FROM tags LEFT JOIN certificate_tag ct " +
-            "on tags.id = ct.tag_id WHERE certificate_id IN (SELECT co.certificate_id FROM gift_certificates JOIN " +
-            "certificate_order co on gift_certificates.id = co.certificate_id WHERE order_id IN " +
-            "(SELECT orders.order_id FROM orders WHERE user_id = (SELECT users.user_id FROM users " +
-            "RIGHT JOIN orders o ON users.user_id = o.user_id GROUP BY users.user_id " +
-            "ORDER BY SUM(cost) desc LIMIT 1))) GROUP BY id ORDER BY COUNT(id) desc LIMIT 1";
-
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -34,8 +27,7 @@ public class TagDao implements CommonDao<Tag> {
 
     public Optional<Tag> readByName(String name) {
         try {
-            TypedQuery<Tag> query = entityManager
-                    .createQuery("SELECT t FROM Tag as t WHERE t.name=:name", Tag.class);
+            TypedQuery<Tag> query = entityManager.createNamedQuery("Tag_findByName", Tag.class);
             query.setParameter("name", name);
             Tag tag = query.getSingleResult();
             return Optional.of(tag);
@@ -46,12 +38,12 @@ public class TagDao implements CommonDao<Tag> {
 
     @Override
     public List<Tag> readAll() {
-        TypedQuery<Tag> query = entityManager.createQuery("SELECT t FROM Tag as t", Tag.class);
+        TypedQuery<Tag> query = entityManager.createNamedQuery("Tag_findAll", Tag.class);
         return query.getResultList();
     }
 
     public List<Tag> readPaginated(int page, int size) {
-        TypedQuery<Tag> query = entityManager.createQuery("SELECT t FROM Tag as t", Tag.class);
+        TypedQuery<Tag> query = entityManager.createNamedQuery("Tag_findAll", Tag.class);
         query.setFirstResult((page - 1) * size);
         query.setMaxResults(size);
         return query.getResultList();
@@ -76,7 +68,7 @@ public class TagDao implements CommonDao<Tag> {
     }
 
     public int fetchNumberOfPages(int size) {
-        Query query = entityManager.createQuery("SELECT count(t.id) FROM Tag as t");
+        Query query = entityManager.createNamedQuery("Tag_getAmount");
         Long count = (Long) query.getSingleResult();
         int pages = count.intValue() / size;
         if (count % size > 0) {
@@ -86,7 +78,7 @@ public class TagDao implements CommonDao<Tag> {
     }
 
     public Optional<Tag> readMostWidelyUsedTag() {
-        Query query = entityManager.createNativeQuery(MOST_USED_TAG_QUERY, Tag.class);
+        Query query = entityManager.createNamedQuery("Tag_getMostUsedTag", Tag.class);
         Tag tag = (Tag) query.getSingleResult();
         return tag == null ? Optional.empty() : Optional.of(tag);
     }
