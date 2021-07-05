@@ -2,7 +2,6 @@ package com.epam.esm.service.converter;
 
 import com.epam.esm.repository.model.Tag;
 import com.epam.esm.service.dto.TagDto;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
