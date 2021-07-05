@@ -14,7 +14,7 @@ import com.epam.esm.service.exception.NoSuchPageException;
 import com.epam.esm.service.exception.NotExistentUpdateException;
 import com.epam.esm.service.validation.GiftCertificateValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,18 +29,15 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     private final GiftCertificateValidator validator;
     private final GiftCertificateDao certificateDao;
     private final TagDao tagDao;
-    private final Converter<GiftCertificate, GiftCertificateDto> certificateConverter;
-    private final Converter<GiftCertificateDto, GiftCertificate> certificateDtoConverter;
+    private final ConversionService conversionService;
 
     @Autowired
     public GiftCertificateService(GiftCertificateValidator validator, GiftCertificateDao certificateDao,
-                                  TagDao tagDao, Converter<GiftCertificate, GiftCertificateDto> certificateConverter,
-                                  Converter<GiftCertificateDto, GiftCertificate> certificateDtoConverter) {
+                                  TagDao tagDao, ConversionService conversionService) {
         this.validator = validator;
         this.certificateDao = certificateDao;
         this.tagDao = tagDao;
-        this.certificateConverter = certificateConverter;
-        this.certificateDtoConverter = certificateDtoConverter;
+        this.conversionService = conversionService;
     }
 
     @Override
@@ -52,14 +49,14 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         if (dto.getTags() == null) {
             dto.setTags(new HashSet<>());
         }
-        GiftCertificate entity = certificateDtoConverter.convert(dto);
+        GiftCertificate entity = conversionService.convert(dto, GiftCertificate.class);
         if (entity == null) {
             throw new IllegalArgumentException("null");
         }
         Set<Tag> tags = processTags(dto.getTags());
         entity.setTags(tags);
         GiftCertificate giftCertificate = certificateDao.create(entity);
-        return certificateConverter.convert(giftCertificate);
+        return conversionService.convert(giftCertificate, GiftCertificateDto.class);
     }
 
     @Override
@@ -67,14 +64,14 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         final Optional<GiftCertificate> giftCertificate = certificateDao.read(id);
         GiftCertificate certificate = giftCertificate
                 .orElseThrow(() -> new NoSuchCertificateException(id));
-        return certificateConverter.convert(certificate);
+        return conversionService.convert(certificate, GiftCertificateDto.class);
     }
 
     @Override
     public List<GiftCertificateDto> readAll() {
         List<GiftCertificate> certificates = certificateDao.readAll();
         return certificates.stream()
-                .map(certificateConverter::convert)
+                .map(certificate -> conversionService.convert(certificate, GiftCertificateDto.class))
                 .collect(Collectors.toList());
     }
 
@@ -88,7 +85,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         }
         List<GiftCertificate> certificates = certificateDao.readWithParameters(page, size, sortValue, sortType);
         return certificates.stream()
-                .map(certificateConverter::convert)
+                .map(certificate -> conversionService.convert(certificate, GiftCertificateDto.class))
                 .collect(Collectors.toList());
     }
 
@@ -107,7 +104,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         updateEntity(entity, dto);
         Set<Tag> tags = processTags(dto.getTags());
         entity.setTags(tags);
-        return certificateConverter.convert(certificateDao.update(entity));
+        return conversionService.convert(certificateDao.update(entity), GiftCertificateDto.class);
     }
 
     @Override
@@ -119,7 +116,7 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     public List<GiftCertificateDto> searchByCriteria(GiftCertificateCriteria criteria, Integer page, Integer size) {
         List<GiftCertificate> certificates = certificateDao.searchByCriteria(criteria, page, size);
         return certificates.stream()
-                .map(certificateConverter::convert)
+                .map(certificate -> conversionService.convert(certificate, GiftCertificateDto.class))
                 .collect(Collectors.toList());
     }
 

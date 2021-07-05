@@ -1,14 +1,13 @@
 package com.epam.esm.service.maintenance;
 
 import com.epam.esm.repository.dao.UserDao;
-import com.epam.esm.repository.model.Order;
 import com.epam.esm.repository.model.User;
 import com.epam.esm.service.dto.OrderDto;
 import com.epam.esm.service.dto.UserDto;
 import com.epam.esm.service.exception.NoSuchPageException;
 import com.epam.esm.service.exception.NoSuchUserException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,15 +18,12 @@ import java.util.stream.Collectors;
 @Service
 public class UserService implements CommonService<UserDto> {
     private final UserDao userDao;
-    private final Converter<User, UserDto> userConverter;
-    private final Converter<Order, OrderDto> orderConverter;
+    private final ConversionService conversionService;
 
     @Autowired
-    public UserService(UserDao userDao, Converter<User, UserDto> userConverter, Converter<Order,
-            OrderDto> orderConverter) {
+    public UserService(UserDao userDao, ConversionService conversionService) {
         this.userDao = userDao;
-        this.userConverter = userConverter;
-        this.orderConverter = orderConverter;
+        this.conversionService = conversionService;
     }
 
     @Override
@@ -40,14 +36,14 @@ public class UserService implements CommonService<UserDto> {
         Optional<User> userOptional = userDao.read(id);
         User user = userOptional
                 .orElseThrow(() -> new NoSuchUserException(id));
-        return userConverter.convert(user);
+        return conversionService.convert(user, UserDto.class);
     }
 
     @Override
     public List<UserDto> readAll() {
         List<User> users = userDao.readAll();
         return users.stream()
-                .map(userConverter::convert)
+                .map(user -> conversionService.convert(user, UserDto.class))
                 .collect(Collectors.toList());
     }
 
@@ -58,7 +54,7 @@ public class UserService implements CommonService<UserDto> {
         }
         List<User> users = userDao.readPaginated(page, size);
         return users.stream()
-                .map(userConverter::convert)
+                .map(user -> conversionService.convert(user, UserDto.class))
                 .collect(Collectors.toList());
     }
 
@@ -78,7 +74,7 @@ public class UserService implements CommonService<UserDto> {
         User user = userOptional
                 .orElseThrow(() -> new NoSuchUserException(id));
         return user.getOrders().stream()
-                .map(orderConverter::convert)
+                .map(order -> conversionService.convert(order, OrderDto.class))
                 .collect(Collectors.toList());
     }
 

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.ConversionService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -41,17 +41,14 @@ class OrderServiceTest {
     private GiftCertificateDao certificateDao;
 
     @Mock
-    private Converter<Order, OrderDto> orderConverter;
-
-    @Mock
-    private Converter<OrderDto, Order> orderDtoConverter;
+    private ConversionService conversionService;
 
     private OrderService service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new OrderService(orderDao, userDao, certificateDao, orderConverter, orderDtoConverter);
+        service = new OrderService(orderDao, userDao, certificateDao, conversionService);
     }
 
     @Test
@@ -96,11 +93,11 @@ class OrderServiceTest {
         OrderDto orderDto = new OrderDto(0, new BigDecimal("10.3"), now.toString(), userDto, certificateDtos);
         OrderDto expected = new OrderDto(orderId, new BigDecimal("10.3"), now.toString(), userDto, certificateDtos);
 
-        when(orderDtoConverter.convert(orderDto)).thenReturn(order);
+        when(conversionService.convert(orderDto, Order.class)).thenReturn(order);
         when(userDao.read(userDto.getId())).thenReturn(Optional.of(user));
         when(certificateDao.read(dto1.getId())).thenReturn(Optional.of(certificate1));
         when(certificateDao.read(dto2.getId())).thenReturn(Optional.of(certificate2));
-        when(orderConverter.convert(createdOrder)).thenReturn(expected);
+        when(conversionService.convert(createdOrder, OrderDto.class)).thenReturn(expected);
         when(orderDao.create(order)).thenReturn(createdOrder);
 
         OrderDto actual = service.create(orderDto);
@@ -149,7 +146,7 @@ class OrderServiceTest {
         user.setOrders(Collections.singletonList(order));
 
         when(orderDao.read(orderId)).thenReturn(Optional.of(order));
-        when(orderConverter.convert(order)).thenReturn(expected);
+        when(conversionService.convert(order, OrderDto.class)).thenReturn(expected);
 
         OrderDto actual = service.read(orderId);
         assertEquals(expected, actual);
@@ -204,7 +201,7 @@ class OrderServiceTest {
         user.setOrders(Collections.singletonList(order));
 
         when(orderDao.readAll()).thenReturn(Collections.singletonList(order));
-        when(orderConverter.convert(order)).thenReturn(orderDto);
+        when(conversionService.convert(order, OrderDto.class)).thenReturn(orderDto);
 
         List<OrderDto> actual = service.readAll();
         List<OrderDto> expected = Collections.singletonList(orderDto);
@@ -255,7 +252,7 @@ class OrderServiceTest {
         user.setOrders(Collections.singletonList(order));
 
         when(orderDao.readPaginated(page, size)).thenReturn(Collections.singletonList(order));
-        when(orderConverter.convert(order)).thenReturn(orderDto);
+        when(conversionService.convert(order, OrderDto.class)).thenReturn(orderDto);
         when(orderDao.fetchNumberOfPages(size)).thenReturn(page + 1);
 
         List<OrderDto> actual = service.readPaginated(page, size);
@@ -309,7 +306,7 @@ class OrderServiceTest {
         when(certificateDao.read(dto1.getId())).thenReturn(Optional.of(certificate1));
         when(certificateDao.read(dto2.getId())).thenReturn(Optional.of(certificate2));
         when(orderDao.update(order)).thenReturn(order);
-        when(orderConverter.convert(order)).thenReturn(expected);
+        when(conversionService.convert(order, OrderDto.class)).thenReturn(expected);
 
         OrderDto actual = service.update(orderDto);
         assertEquals(expected, actual);

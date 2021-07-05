@@ -5,7 +5,6 @@ import com.epam.esm.service.dto.UserDto;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
-@Component
 public class UserConverter implements Converter<User, UserDto> {
 
     @Override

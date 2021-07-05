@@ -3,6 +3,8 @@ package com.epam.esm.repository.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.ConversionServiceFactoryBean;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.orm.jpa.JpaVendorAdapter;
@@ -36,5 +38,12 @@ public class TestConfig {
         JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);
         return em;
+    }
+
+    @Bean(name="conversionService")
+    public ConversionService getConversionService() {
+        ConversionServiceFactoryBean bean = new ConversionServiceFactoryBean();
+        bean.afterPropertiesSet();
+        return bean.getObject();
     }
 }

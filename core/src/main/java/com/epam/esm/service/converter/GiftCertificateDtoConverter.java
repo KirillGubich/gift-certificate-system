@@ -5,7 +5,6 @@ import com.epam.esm.service.dto.GiftCertificateDto;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
-@Component
 public class GiftCertificateDtoConverter implements Converter<GiftCertificateDto, GiftCertificate> {
 
     @Override

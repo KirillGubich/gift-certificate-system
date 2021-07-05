@@ -11,13 +11,11 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
 public class OrderConverter implements Converter<Order, OrderDto> {
 
     private final UserConverter userConverter;
     private final GiftCertificateConverter giftCertificateConverter;
 
-    @Autowired
     public OrderConverter(UserConverter userConverter, GiftCertificateConverter giftCertificateConverter) {
         this.userConverter = userConverter;
         this.giftCertificateConverter = giftCertificateConverter;

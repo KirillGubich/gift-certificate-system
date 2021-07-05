@@ -5,7 +5,6 @@ import com.epam.esm.service.dto.TagDto;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
-@Component
 public class TagDtoConverter implements Converter<TagDto, Tag> {
 
     @Override

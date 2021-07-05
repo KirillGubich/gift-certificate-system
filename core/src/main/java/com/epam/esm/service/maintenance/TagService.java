@@ -6,7 +6,7 @@ import com.epam.esm.service.dto.TagDto;
 import com.epam.esm.service.exception.NoSuchPageException;
 import com.epam.esm.service.exception.NoSuchTagException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,14 +17,12 @@ import java.util.stream.Collectors;
 @Service
 public class TagService implements CommonService<TagDto> {
     private final TagDao tagDao;
-    private final Converter<Tag, TagDto> tagConverter;
-    private final Converter<TagDto, Tag> tagDtoConverter;
+    private final ConversionService conversionService;
 
     @Autowired
-    public TagService(TagDao tagDao, Converter<Tag, TagDto> tagConverter, Converter<TagDto, Tag> tagDtoConverter) {
+    public TagService(TagDao tagDao, ConversionService conversionService) {
         this.tagDao = tagDao;
-        this.tagConverter = tagConverter;
-        this.tagDtoConverter = tagDtoConverter;
+        this.conversionService = conversionService;
     }
 
     @Override
@@ -33,8 +31,8 @@ public class TagService implements CommonService<TagDto> {
         if (dto == null) {
             throw new IllegalArgumentException("null");
         }
-        Tag tag = tagDao.create(tagDtoConverter.convert(dto));
-        return tagConverter.convert(tag);
+        Tag tag = tagDao.create(conversionService.convert(dto, Tag.class));
+        return conversionService.convert(tag, TagDto.class);
     }
 
     @Override
@@ -42,14 +40,14 @@ public class TagService implements CommonService<TagDto> {
         final Optional<Tag> tagOptional = tagDao.read(id);
         Tag tag = tagOptional
                 .orElseThrow(() -> new NoSuchTagException(id));
-        return tagConverter.convert(tag);
+        return conversionService.convert(tag, TagDto.class);
     }
 
     @Override
     public List<TagDto> readAll() {
         final List<Tag> tags = tagDao.readAll();
         return tags.stream()
-                .map(tagConverter::convert)
+                .map(tag -> conversionService.convert(tag, TagDto.class))
                 .collect(Collectors.toList());
     }
 
@@ -71,13 +69,14 @@ public class TagService implements CommonService<TagDto> {
         }
         List<Tag> tags = tagDao.readPaginated(page, size);
         return tags.stream()
-                .map(tagConverter::convert)
+                .map(tag -> conversionService.convert(tag, TagDto.class))
                 .collect(Collectors.toList());
     }
 
     public TagDto receiveMostUsedTag() {
         Optional<Tag> tagOptional = tagDao.readMostWidelyUsedTag();
-        return tagOptional.map(tagConverter::convert).orElseThrow(NoSuchTagException::new);
+        return tagOptional.map(tag -> conversionService.convert(tag, TagDto.class))
+                .orElseThrow(NoSuchTagException::new);
     }
 
     public int getLastPage(int size) {

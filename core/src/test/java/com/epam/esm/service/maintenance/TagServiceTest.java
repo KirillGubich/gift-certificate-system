@@ -3,8 +3,6 @@ package com.epam.esm.service.maintenance;
 import com.epam.esm.repository.config.TestConfig;
 import com.epam.esm.repository.dao.TagDao;
 import com.epam.esm.repository.model.Tag;
-import com.epam.esm.service.converter.TagConverter;
-import com.epam.esm.service.converter.TagDtoConverter;
 import com.epam.esm.service.dto.TagDto;
 import com.epam.esm.service.exception.NoSuchPageException;
 import com.epam.esm.service.exception.NoSuchTagException;
@@ -14,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -37,17 +36,14 @@ class TagServiceTest {
     private TagDao tagDao;
 
     @Mock
-    private TagConverter tagConverter;
-
-    @Mock
-    private TagDtoConverter tagDtoConverter;
+    private ConversionService conversionService;
 
     private TagService tagService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        tagService = new TagService(tagDao, tagConverter, tagDtoConverter);
+        tagService = new TagService(tagDao, conversionService);
     }
 
     @Test
@@ -58,8 +54,8 @@ class TagServiceTest {
         TagDto createdDto = new TagDto(id, "AnyName");
 
         when(tagDao.create(any(Tag.class))).thenReturn(tag);
-        when(tagConverter.convert(tag)).thenReturn(createdDto);
-        when(tagDtoConverter.convert(any(TagDto.class))).thenReturn(new Tag(0, "AnyName"));
+        when(conversionService.convert(tag, TagDto.class)).thenReturn(createdDto);
+        when(conversionService.convert(tagDto, Tag.class)).thenReturn(new Tag(0, "AnyName"));
 
         TagDto actual = tagService.create(tagDto);
         assertEquals(createdDto, actual);
@@ -78,7 +74,7 @@ class TagServiceTest {
         TagDto tagDto = new TagDto(id, "AnyName");
 
         when(tagDao.read(id)).thenReturn(Optional.of(tag));
-        when(tagConverter.convert(tag)).thenReturn(tagDto);
+        when(conversionService.convert(tag, TagDto.class)).thenReturn(tagDto);
 
         TagDto actual = tagService.read(id);
         assertEquals(tagDto, actual);
@@ -101,8 +97,8 @@ class TagServiceTest {
         List<TagDto> expected = Arrays.asList(tagDto1, tagDto2);
 
         when(tagDao.readAll()).thenReturn(tags);
-        when(tagConverter.convert(tag1)).thenReturn(tagDto1);
-        when(tagConverter.convert(tag2)).thenReturn(tagDto2);
+        when(conversionService.convert(tag1, TagDto.class)).thenReturn(tagDto1);
+        when(conversionService.convert(tag2, TagDto.class)).thenReturn(tagDto2);
 
         List<TagDto> actual = tagService.readAll();
         assertEquals(expected, actual);
@@ -136,8 +132,8 @@ class TagServiceTest {
         List<TagDto> expected = Arrays.asList(tagDto1, tagDto2);
 
         when(tagDao.readPaginated(page, size)).thenReturn(tags);
-        when(tagConverter.convert(tag1)).thenReturn(tagDto1);
-        when(tagConverter.convert(tag2)).thenReturn(tagDto2);
+        when(conversionService.convert(tag1, TagDto.class)).thenReturn(tagDto1);
+        when(conversionService.convert(tag2, TagDto.class)).thenReturn(tagDto2);
         when(tagDao.fetchNumberOfPages(size)).thenReturn(1);
 
         List<TagDto> actual = tagService.readPaginated(page, size);
@@ -157,7 +153,7 @@ class TagServiceTest {
         TagDto expected = new TagDto(1, "name");
 
         when(tagDao.readMostWidelyUsedTag()).thenReturn(Optional.of(tag));
-        when(tagConverter.convert(tag)).thenReturn(expected);
+        when(conversionService.convert(tag, TagDto.class)).thenReturn(expected);
 
         TagDto actual = tagService.receiveMostUsedTag();
         assertEquals(expected, actual);

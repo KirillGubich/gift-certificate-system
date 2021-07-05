@@ -18,7 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -51,18 +51,14 @@ class GiftCertificateServiceTest {
     private GiftCertificateValidator validator;
 
     @Mock
-    private Converter<GiftCertificate, GiftCertificateDto> certificateConverter;
-
-    @Mock
-    private Converter<GiftCertificateDto, GiftCertificate> certificateDtoConverter;
+    private ConversionService conversionService;
 
     private GiftCertificateService service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new GiftCertificateService(validator, certificateDao, tagDao,
-                certificateConverter, certificateDtoConverter);
+        service = new GiftCertificateService(validator, certificateDao, tagDao, conversionService);
     }
 
     @Test
@@ -111,8 +107,8 @@ class GiftCertificateServiceTest {
 
         when(tagDao.readByName(anyString())).thenReturn(Optional.of(tag));
         when(certificateDao.create(any(GiftCertificate.class))).thenReturn(createdCertificate);
-        when(certificateDtoConverter.convert(any(GiftCertificateDto.class))).thenReturn(certificate);
-        when(certificateConverter.convert(any(GiftCertificate.class))).thenReturn(expected);
+        when(conversionService.convert(certificateDto, GiftCertificate.class)).thenReturn(certificate);
+        when(conversionService.convert(createdCertificate, GiftCertificateDto.class)).thenReturn(expected);
 
         GiftCertificateDto actual = service.create(certificateDto);
         assertEquals(expected, actual);
@@ -136,7 +132,7 @@ class GiftCertificateServiceTest {
                 .build();
 
         when(certificateDao.read(id)).thenReturn(Optional.of(certificate));
-        when(certificateConverter.convert(certificate)).thenReturn(expected);
+        when(conversionService.convert(certificate, GiftCertificateDto.class)).thenReturn(expected);
 
         GiftCertificateDto actual = service.read(id);
         assertEquals(expected, actual);
@@ -182,8 +178,8 @@ class GiftCertificateServiceTest {
         List<GiftCertificate> certificates = Arrays.asList(certificate1, certificate2);
 
         when(certificateDao.readAll()).thenReturn(certificates);
-        when(certificateConverter.convert(certificate1)).thenReturn(dto1);
-        when(certificateConverter.convert(certificate2)).thenReturn(dto2);
+        when(conversionService.convert(certificate1, GiftCertificateDto.class)).thenReturn(dto1);
+        when(conversionService.convert(certificate2, GiftCertificateDto.class)).thenReturn(dto2);
 
         List<GiftCertificateDto> expected = Arrays.asList(dto1, dto2);
         List<GiftCertificateDto> actual = service.readAll();
@@ -228,8 +224,8 @@ class GiftCertificateServiceTest {
         List<GiftCertificate> certificates = Arrays.asList(certificate1, certificate2);
 
         when(certificateDao.readWithParameters(page, size, sortValue, sortType)).thenReturn(certificates);
-        when(certificateConverter.convert(certificate1)).thenReturn(dto1);
-        when(certificateConverter.convert(certificate2)).thenReturn(dto2);
+        when(conversionService.convert(certificate1, GiftCertificateDto.class)).thenReturn(dto1);
+        when(conversionService.convert(certificate2, GiftCertificateDto.class)).thenReturn(dto2);
         when(certificateDao.fetchNumberOfPages(size)).thenReturn(page + 1);
 
         List<GiftCertificateDto> expected = Arrays.asList(dto1, dto2);
@@ -281,7 +277,7 @@ class GiftCertificateServiceTest {
         when(certificateDao.update(any(GiftCertificate.class))).thenReturn(updatedCertificate);
         when(validator.validateName(anyString())).thenAnswer(i -> i.getArguments()[0]);
         when(validator.validateDuration(anyInt())).thenAnswer(i -> i.getArguments()[0]);
-        when(certificateConverter.convert(updatedCertificate)).thenReturn(expected);
+        when(conversionService.convert(updatedCertificate, GiftCertificateDto.class)).thenReturn(expected);
 
         GiftCertificateDto actual = service.update(certificateDto);
         assertEquals(expected, actual);

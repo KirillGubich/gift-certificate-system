@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.ConversionService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -32,17 +32,14 @@ class UserServiceTest {
     private UserDao userDao;
 
     @Mock
-    private Converter<User, UserDto> userConverter;
-
-    @Mock
-    private Converter<Order, OrderDto> orderConverter;
+    private ConversionService conversionService;
 
     private UserService service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new UserService(userDao, userConverter, orderConverter);
+        service = new UserService(userDao, conversionService);
     }
 
     @Test
@@ -52,7 +49,7 @@ class UserServiceTest {
         UserDto userDto = new UserDto(1, "name", "password");
 
         when(userDao.read(id)).thenReturn(Optional.of(user));
-        when(userConverter.convert(user)).thenReturn(userDto);
+        when(conversionService.convert(user, UserDto.class)).thenReturn(userDto);
 
         UserDto actual = service.read(id);
         assertEquals(userDto, actual);
@@ -75,8 +72,8 @@ class UserServiceTest {
         List<UserDto> expected = Arrays.asList(userDto1, userDto2);
 
         when(userDao.readAll()).thenReturn(users);
-        when(userConverter.convert(user1)).thenReturn(userDto1);
-        when(userConverter.convert(user2)).thenReturn(userDto2);
+        when(conversionService.convert(user1, UserDto.class)).thenReturn(userDto1);
+        when(conversionService.convert(user2, UserDto.class)).thenReturn(userDto2);
 
         List<UserDto> actual = service.readAll();
         assertEquals(expected, actual);
@@ -95,8 +92,8 @@ class UserServiceTest {
 
         when(userDao.fetchNumberOfPages(size)).thenReturn(page + 1);
         when(userDao.readPaginated(page, size)).thenReturn(users);
-        when(userConverter.convert(user1)).thenReturn(userDto1);
-        when(userConverter.convert(user2)).thenReturn(userDto2);
+        when(conversionService.convert(user1, UserDto.class)).thenReturn(userDto1);
+        when(conversionService.convert(user2, UserDto.class)).thenReturn(userDto2);
 
         List<UserDto> actual = service.readPaginated(page, size);
         assertEquals(expected, actual);
@@ -143,7 +140,7 @@ class UserServiceTest {
         user.setOrders(Collections.singletonList(order));
 
         when(userDao.read(id)).thenReturn(Optional.of(user));
-        when(orderConverter.convert(order)).thenReturn(orderDto);
+        when(conversionService.convert(order, OrderDto.class)).thenReturn(orderDto);
 
         List<OrderDto> actual = service.readUserOrders(id);
         List<OrderDto> expected = Collections.singletonList(orderDto);

@@ -14,7 +14,7 @@ import com.epam.esm.service.exception.NoSuchOrderException;
 import com.epam.esm.service.exception.NoSuchPageException;
 import com.epam.esm.service.exception.NoSuchUserException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,17 +28,15 @@ public class OrderService implements CommonService<OrderDto> {
     private final OrderDao orderDao;
     private final UserDao userDao;
     private final GiftCertificateDao certificateDao;
-    private final Converter<Order, OrderDto> orderConverter;
-    private final Converter<OrderDto, Order> orderDtoConverter;
+    private final ConversionService conversionService;
 
     @Autowired
     public OrderService(OrderDao orderDao, UserDao userDao, GiftCertificateDao certificateDao,
-                        Converter<Order, OrderDto> orderConverter, Converter<OrderDto, Order> orderDtoConverter) {
+                        ConversionService conversionService) {
         this.orderDao = orderDao;
         this.userDao = userDao;
         this.certificateDao = certificateDao;
-        this.orderConverter = orderConverter;
-        this.orderDtoConverter = orderDtoConverter;
+        this.conversionService = conversionService;
     }
 
     @Override
@@ -47,7 +45,7 @@ public class OrderService implements CommonService<OrderDto> {
         if (dto == null) {
             throw new IllegalArgumentException("null");
         }
-        Order order = orderDtoConverter.convert(dto);
+        Order order = conversionService.convert(dto, Order.class);
         if (order == null) {
             throw new IllegalArgumentException("null");
         }
@@ -55,7 +53,7 @@ public class OrderService implements CommonService<OrderDto> {
         List<GiftCertificate> certificates = extractCertificates(dto.getGiftCertificates());
         order.setUser(user);
         order.setGiftCertificates(certificates);
-        return orderConverter.convert(orderDao.create(order));
+        return conversionService.convert(orderDao.create(order), OrderDto.class);
     }
 
     @Override
@@ -63,14 +61,14 @@ public class OrderService implements CommonService<OrderDto> {
         Optional<Order> orderOptional = orderDao.read(id);
         Order order = orderOptional
                 .orElseThrow(() -> new NoSuchOrderException(id));
-        return orderConverter.convert(order);
+        return conversionService.convert(order, OrderDto.class);
     }
 
     @Override
     public List<OrderDto> readAll() {
         List<Order> orders = orderDao.readAll();
         return orders.stream()
-                .map(orderConverter::convert)
+                .map(order -> conversionService.convert(order, OrderDto.class))
                 .collect(Collectors.toList());
     }
 
@@ -81,7 +79,7 @@ public class OrderService implements CommonService<OrderDto> {
         }
         List<Order> orders = orderDao.readPaginated(page, size);
         return orders.stream()
-                .map(orderConverter::convert)
+                .map(order -> conversionService.convert(order, OrderDto.class))
                 .collect(Collectors.toList());
     }
 
@@ -99,7 +97,7 @@ public class OrderService implements CommonService<OrderDto> {
         order.setUser(user);
         order.setGiftCertificates(certificates);
         order.setCost(dto.getCost());
-        return orderConverter.convert(orderDao.update(order));
+        return conversionService.convert(orderDao.update(order), OrderDto.class);
     }
 
     @Override
