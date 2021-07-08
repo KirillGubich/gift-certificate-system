@@ -5,7 +5,10 @@ package com.epam.esm.service.exception;
  */
 public class NoSuchUserException extends RuntimeException {
 
-    private final int id;
+    private int id;
+
+    public NoSuchUserException() {
+    }
 
     public NoSuchUserException(int id) {
         this.id = id;

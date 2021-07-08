@@ -1,83 +1,63 @@
 package com.epam.esm.web.config;
 
-import com.epam.esm.service.maintenance.UserService;
-import com.epam.esm.web.filter.JwtCsrfFilter;
-import com.epam.esm.web.security.JwtTokenRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import com.epam.esm.web.security.JwtConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configuration.EnableGlobalAuthentication;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.csrf.CsrfFilter;
-import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final UserService service;
-    private final JwtTokenRepository jwtTokenRepository;
-    private final HandlerExceptionResolver resolver;
+    private final JwtConfigurer jwtConfigurer;
 
-    @Autowired
-    public WebSecurityConfig(UserService service, JwtTokenRepository jwtTokenRepository,
-                             @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
-        this.service = service;
-        this.jwtTokenRepository = jwtTokenRepository;
-        this.resolver = resolver;
+    public WebSecurityConfig(JwtConfigurer jwtConfigurer) {
+        this.jwtConfigurer = jwtConfigurer;
     }
-
-    @Bean
-    public PasswordEncoder devPasswordEncoder() {
-        return NoOpPasswordEncoder.getInstance();
-    }
-
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(service);
-    }
-
-//    @Override
-//    protected void configure(HttpSecurity http) throws Exception {
-//        http
-//                .sessionManagement()
-//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//                .and()
-//                    .addFilterAt(new JwtCsrfFilter(jwtTokenRepository, resolver), CsrfFilter.class)
-//                    .csrf().ignoringAntMatchers("/**")
-//                .and()
-//                    .authorizeRequests()
-//                    .antMatchers("/login")
-//                    .authenticated()
-//                .and()
-//                    .httpBasic()
-//                    .authenticationEntryPoint(((request, response, e) -> resolver
-//                            .resolveException(request, response, null, e)));
-//    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                .csrf().disable() //todo why?
-                .httpBasic();
+                .csrf().disable()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .authorizeRequests()
+                .antMatchers("/").permitAll()
+                .antMatchers("/auth/login").permitAll()
+                .antMatchers(HttpMethod.GET, "/tags/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/certificates/**").permitAll()
+                .anyRequest()
+                .authenticated()
+                .and()
+                .apply(jwtConfigurer);
     }
 
+    @Bean
     @Override
-    public void configure(WebSecurity web) throws Exception {
-        web
-                .ignoring()
-                .antMatchers(HttpMethod.GET, "/tags/**")
-                .antMatchers(HttpMethod.GET, "/certificates/**");
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
+
+    @Bean
+    @Profile("prod")
+    protected PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
+    }
+
+    @Bean
+    @Profile("dev")
+    protected PasswordEncoder devPasswordEncoder() {
+        return NoOpPasswordEncoder.getInstance();
     }
 }

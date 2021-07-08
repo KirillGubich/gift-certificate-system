@@ -92,13 +92,18 @@ public class UserService implements CommonService<UserDto>, UserDetailsService {
     }
 
     @Transactional
-    public User getByLogin(String login) {
-        return userRepository.findByLogin(login);
+    public UserDto getByLogin(String login) {
+        User user = userRepository.findByLogin(login);
+        if (user != null) {
+            return conversionService.convert(user, UserDto.class);
+        } else {
+            throw new NoSuchUserException();
+        }
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User u = getByLogin(username);
+        User u = userRepository.findByLogin(username);
         if (Objects.isNull(u)) {
             throw new UsernameNotFoundException(String.format("User %s is not found", username));
         }

@@ -16,7 +16,7 @@ import com.epam.esm.service.validation.ValidationMessageManager;
 import com.epam.esm.web.model.ErrorCode;
 import com.epam.esm.web.model.ErrorInfo;
 import com.epam.esm.web.model.ErrorMessageManager;
-import com.epam.esm.web.security.JwtTokenRepository;
+import com.epam.esm.web.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -72,12 +72,12 @@ public class RestExceptionHandler {
     private static final String INVALID_ACTION_PROPERTY = "invalid_action";
     private static final String UNAUTHORIZED_ACCESS_PROPERTY = "unauthorized_access";
     private final ErrorMessageManager messageManager;
-    private final JwtTokenRepository jwtTokenRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    public RestExceptionHandler(ErrorMessageManager messageManager, JwtTokenRepository jwtTokenRepository) {
+    public RestExceptionHandler(ErrorMessageManager messageManager, JwtTokenProvider jwtTokenProvider) {
         this.messageManager = messageManager;
-        this.jwtTokenRepository = jwtTokenRepository;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @ExceptionHandler(NoSuchTagException.class)
@@ -277,7 +277,6 @@ public class RestExceptionHandler {
     @ExceptionHandler({AuthenticationException.class, MissingCsrfTokenException.class, InvalidCsrfTokenException.class,
             SessionAuthenticationException.class})
     public ResponseEntity<ErrorInfo> handleAuthenticationException(HttpServletResponse response, Locale locale) {
-        jwtTokenRepository.clearToken(response);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         String errorMessage = messageManager.receiveMessage(UNAUTHORIZED_ACCESS_PROPERTY, locale);
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.UNAUTHORIZED_ACCESS);
