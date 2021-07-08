@@ -83,7 +83,6 @@ public class TagController {
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public TagDto receiveTag(@PathVariable int id) {
         TagDto tag = service.read(id);
         Link selfLink = createSelfLink(tag);
@@ -98,7 +97,6 @@ public class TagController {
      */
     @GetMapping(value = "/popular", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public TagDto receiveMostWidelyUsedTag() {
         TagDto tag = service.receiveMostUsedTag();
         Link selfLink = createSelfLink(tag);

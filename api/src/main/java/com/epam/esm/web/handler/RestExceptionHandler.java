@@ -16,16 +16,13 @@ import com.epam.esm.service.validation.ValidationMessageManager;
 import com.epam.esm.web.model.ErrorCode;
 import com.epam.esm.web.model.ErrorInfo;
 import com.epam.esm.web.model.ErrorMessageManager;
-import com.epam.esm.web.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.authentication.session.SessionAuthenticationException;
-import org.springframework.security.web.csrf.InvalidCsrfTokenException;
-import org.springframework.security.web.csrf.MissingCsrfTokenException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -71,13 +68,12 @@ public class RestExceptionHandler {
     private static final String PAGE_NOT_FOUND_PROPERTY = "page_not_found";
     private static final String INVALID_ACTION_PROPERTY = "invalid_action";
     private static final String UNAUTHORIZED_ACCESS_PROPERTY = "unauthorized_access";
+    private static final String INCORRECT_AUTHENTICATION_PROPERTY = "incorrect_authentication";
     private final ErrorMessageManager messageManager;
-    private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    public RestExceptionHandler(ErrorMessageManager messageManager, JwtTokenProvider jwtTokenProvider) {
+    public RestExceptionHandler(ErrorMessageManager messageManager) {
         this.messageManager = messageManager;
-        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @ExceptionHandler(NoSuchTagException.class)
@@ -274,9 +270,15 @@ public class RestExceptionHandler {
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler({AuthenticationException.class, MissingCsrfTokenException.class, InvalidCsrfTokenException.class,
-            SessionAuthenticationException.class})
-    public ResponseEntity<ErrorInfo> handleAuthenticationException(HttpServletResponse response, Locale locale) {
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorInfo> handleAuthenticationException(Locale locale) {
+        String errorMessage = messageManager.receiveMessage(INCORRECT_AUTHENTICATION_PROPERTY, locale);
+        ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.UNAUTHORIZED_ACCESS);
+        return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorInfo> handleAuthorizationException(HttpServletResponse response, Locale locale) {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         String errorMessage = messageManager.receiveMessage(UNAUTHORIZED_ACCESS_PROPERTY, locale);
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.UNAUTHORIZED_ACCESS);

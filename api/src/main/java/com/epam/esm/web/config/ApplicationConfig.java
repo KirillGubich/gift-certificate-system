@@ -4,6 +4,7 @@ import com.epam.esm.service.converter.GiftCertificateConverter;
 import com.epam.esm.service.converter.GiftCertificateDtoConverter;
 import com.epam.esm.service.converter.OrderConverter;
 import com.epam.esm.service.converter.OrderDtoConverter;
+import com.epam.esm.service.converter.RoleConverter;
 import com.epam.esm.service.converter.TagConverter;
 import com.epam.esm.service.converter.TagDtoConverter;
 import com.epam.esm.service.converter.UserConverter;
@@ -36,7 +37,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
     @Override
     public void addFormatters(FormatterRegistry registry) {
         TagConverter tagConverter = new TagConverter();
-        UserConverter userConverter = new UserConverter();
+        RoleConverter roleConverter = new RoleConverter();
+        UserConverter userConverter = new UserConverter(roleConverter);
         GiftCertificateConverter giftCertificateConverter = new GiftCertificateConverter(tagConverter);
         OrderConverter orderConverter = new OrderConverter(userConverter, giftCertificateConverter);
         registry.addConverter(tagConverter);

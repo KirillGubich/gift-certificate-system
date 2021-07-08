@@ -1,6 +1,7 @@
 package com.epam.esm.web.security;
 
 import com.epam.esm.service.dto.RoleDto;
+import com.epam.esm.web.exception.TokenValidateException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
@@ -57,11 +58,14 @@ public class JwtTokenProvider {
     }
 
     public boolean validateToken(String token) {
+        if (token == null) {
+            return false;
+        }
         try {
             Jws<Claims> claimsJws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
             return !claimsJws.getBody().getExpiration().before(new Date());
         } catch (JwtException | IllegalArgumentException e) {
-            throw new RuntimeException(); //todo custom exception
+            throw new TokenValidateException();
         }
     }
 

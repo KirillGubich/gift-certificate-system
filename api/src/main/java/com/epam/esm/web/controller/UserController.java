@@ -4,10 +4,12 @@ import com.epam.esm.service.dto.OrderDto;
 import com.epam.esm.service.dto.UserDto;
 import com.epam.esm.service.maintenance.UserService;
 import com.epam.esm.web.pagination.PaginationManager;
+import com.epam.esm.web.security.AccessValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,17 +31,20 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 public class UserController {
 
     private final UserService service;
+    private final AccessValidator accessValidator;
     private final PaginationManager<UserDto> paginationManager;
 
     /**
      * Constructor with service and pagination manager
-     *
-     * @param service           user service
+     *  @param service           user service
+     * @param accessValidator access validator
      * @param paginationManager user pagination manager
      */
     @Autowired
-    public UserController(UserService service, PaginationManager<UserDto> paginationManager) {
+    public UserController(UserService service, AccessValidator accessValidator,
+                          PaginationManager<UserDto> paginationManager) {
         this.service = service;
+        this.accessValidator = accessValidator;
         this.paginationManager = paginationManager;
     }
 
@@ -76,7 +81,9 @@ public class UserController {
      */
     @GetMapping(value = "/{id}", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public UserDto receiveUser(@PathVariable int id) {
+        accessValidator.validate(id);
         UserDto user = service.read(id);
         Link selfLink = createSelfLink(user);
         user.add(selfLink);
@@ -91,7 +98,9 @@ public class UserController {
      */
     @GetMapping(value = "/{id}/orders", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public List<OrderDto> receiveUserOrders(@PathVariable int id) {
+        accessValidator.validate(id);
         return service.readUserOrders(id);
     }
 
