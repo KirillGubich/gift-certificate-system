@@ -7,6 +7,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
@@ -14,6 +15,7 @@ import javax.sql.DataSource;
 @Configuration
 @ComponentScan("com.epam.esm")
 @EntityScan("com.epam.esm")
+@EnableJpaRepositories("com.epam.esm")
 @PropertySource("classpath:database.properties")
 @PropertySource("classpath:dev_database.properties")
 public class RepositoryConfig {

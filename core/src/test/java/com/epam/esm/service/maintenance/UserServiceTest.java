@@ -39,7 +39,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new UserService(userDao, conversionService);
+        service = new UserService(null, userDao, conversionService);
     }
 
     @Test

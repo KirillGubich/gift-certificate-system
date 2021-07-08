@@ -18,6 +18,14 @@ public class UserDto extends RepresentationModel<UserDto> {
     @Size(min = 8, max = 200, message = ValidationMessageManager.USER_PASSWORD_WRONG_SIZE)
     private String password;
 
+    @NotBlank(message = ValidationMessageManager.BLANK_USER_NAME)
+    @Size(min = 3, max = 100, message = ValidationMessageManager.USER_NAME_WRONG_SIZE)
+    private String firstName;
+
+    @NotBlank(message = ValidationMessageManager.BLANK_USER_NAME)
+    @Size(min = 3, max = 100, message = ValidationMessageManager.USER_NAME_WRONG_SIZE)
+    private String lastName;
+
     public UserDto() {
     }
 
@@ -25,6 +33,14 @@ public class UserDto extends RepresentationModel<UserDto> {
         this.id = id;
         this.name = name;
         this.password = password;
+    }
+
+    public UserDto(int id, String name, String password, String firstName, String lastName) {
+        this.id = id;
+        this.name = name;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
     public int getId() {
@@ -51,17 +67,35 @@ public class UserDto extends RepresentationModel<UserDto> {
         this.password = password;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         UserDto userDto = (UserDto) o;
-        return id == userDto.id && Objects.equals(name, userDto.name) && Objects.equals(password, userDto.password);
+        return id == userDto.id && Objects.equals(name, userDto.name) && Objects.equals(password, userDto.password)
+                && Objects.equals(firstName, userDto.firstName) && Objects.equals(lastName, userDto.lastName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, password);
+        return Objects.hash(super.hashCode(), id, name, password, firstName, lastName);
     }
 
     @Override
@@ -70,6 +104,8 @@ public class UserDto extends RepresentationModel<UserDto> {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", password='" + password + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
                 '}';
     }
 }

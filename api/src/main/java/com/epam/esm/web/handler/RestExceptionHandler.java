@@ -16,11 +16,16 @@ import com.epam.esm.service.validation.ValidationMessageManager;
 import com.epam.esm.web.model.ErrorCode;
 import com.epam.esm.web.model.ErrorInfo;
 import com.epam.esm.web.model.ErrorMessageManager;
+import com.epam.esm.web.security.JwtTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.session.SessionAuthenticationException;
+import org.springframework.security.web.csrf.InvalidCsrfTokenException;
+import org.springframework.security.web.csrf.MissingCsrfTokenException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,6 +33,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashSet;
 import java.util.Locale;
@@ -64,11 +70,14 @@ public class RestExceptionHandler {
     private static final String ORDER_NOT_FOUND_PROPERTY = "order_not_found";
     private static final String PAGE_NOT_FOUND_PROPERTY = "page_not_found";
     private static final String INVALID_ACTION_PROPERTY = "invalid_action";
-    private ErrorMessageManager messageManager;
+    private static final String UNAUTHORIZED_ACCESS_PROPERTY = "unauthorized_access";
+    private final ErrorMessageManager messageManager;
+    private final JwtTokenRepository jwtTokenRepository;
 
     @Autowired
-    public void setMessageManager(ErrorMessageManager messageManager) {
+    public RestExceptionHandler(ErrorMessageManager messageManager, JwtTokenRepository jwtTokenRepository) {
         this.messageManager = messageManager;
+        this.jwtTokenRepository = jwtTokenRepository;
     }
 
     @ExceptionHandler(NoSuchTagException.class)
@@ -263,6 +272,16 @@ public class RestExceptionHandler {
         String errorMessage = message + " (" + e.getMessage() + ")";
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.INVALID_DATA);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler({AuthenticationException.class, MissingCsrfTokenException.class, InvalidCsrfTokenException.class,
+            SessionAuthenticationException.class})
+    public ResponseEntity<ErrorInfo> handleAuthenticationException(HttpServletResponse response, Locale locale) {
+        jwtTokenRepository.clearToken(response);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        String errorMessage = messageManager.receiveMessage(UNAUTHORIZED_ACCESS_PROPERTY, locale);
+        ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.UNAUTHORIZED_ACCESS);
+        return new ResponseEntity<>(errorInfo, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)

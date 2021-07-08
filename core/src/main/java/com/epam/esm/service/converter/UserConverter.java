@@ -8,6 +8,7 @@ public class UserConverter implements Converter<User, UserDto> {
 
     @Override
     public UserDto convert(User source) {
-        return new UserDto(source.getId(), source.getName(), source.getPassword());
+        return new UserDto(source.getId(), source.getLogin(), source.getPassword(),
+                source.getFirstName(), source.getLastName());
     }
 }

@@ -3,15 +3,20 @@ package com.epam.esm.repository.model;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = DatabaseInfo.USER_TABLE)
@@ -25,20 +30,39 @@ public class User {
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = DatabaseInfo.USER_ID_COLUMN)
     private int id;
-    private String name;
+    private String login;
     private String password;
+    private String firstName;
+    private String lastName;
 
     @OneToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH},
             mappedBy = "user")
     private List<Order> orders;
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "users_roles",
+            joinColumns = @JoinColumn(
+                    name = "user_id", referencedColumnName = "user_id"),
+            inverseJoinColumns = @JoinColumn(
+                    name = "role_id", referencedColumnName = "id"))
+    private Set<Role> roles;
+
     public User() {
     }
 
-    public User(int id, String name, String password) {
+    public User(int id, String login, String password) {
         this.id = id;
-        this.name = name;
+        this.login = login;
         this.password = password;
+    }
+
+    public User(int id, String login, String password, String firstName, String lastName) {
+        this.id = id;
+        this.login = login;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
     public int getId() {
@@ -49,12 +73,12 @@ public class User {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getLogin() {
+        return login;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setLogin(String login) {
+        this.login = login;
     }
 
     public String getPassword() {
@@ -65,6 +89,22 @@ public class User {
         this.password = password;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
     public List<Order> getOrders() {
         return orders;
     }
@@ -73,27 +113,39 @@ public class User {
         this.orders = orders;
     }
 
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return id == user.id && Objects.equals(name, user.name) && Objects.equals(password, user.password)
-                && Objects.equals(orders, user.orders);
+        return id == user.id && Objects.equals(login, user.login) && Objects.equals(password, user.password)
+                && Objects.equals(firstName, user.firstName) && Objects.equals(lastName, user.lastName)
+                && Objects.equals(orders, user.orders) && Objects.equals(roles, user.roles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, password, orders);
+        return Objects.hash(id, login, password, firstName, lastName, orders, roles);
     }
 
     @Override
     public String toString() {
         return "User{" +
                 "id=" + id +
-                ", name='" + name + '\'' +
+                ", login='" + login + '\'' +
                 ", password='" + password + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
                 ", orders=" + orders +
+                ", roles=" + roles +
                 '}';
     }
 }
