@@ -2,7 +2,7 @@ package com.epam.esm.service.maintenance;
 
 import com.epam.esm.repository.dao.GiftCertificateDao;
 import com.epam.esm.repository.dao.OrderDao;
-import com.epam.esm.repository.dao.UserDao;
+import com.epam.esm.repository.dao.UserRepository;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Order;
 import com.epam.esm.repository.model.User;
@@ -35,7 +35,7 @@ class OrderServiceTest {
     private OrderDao orderDao;
 
     @Mock
-    private UserDao userDao;
+    private UserRepository userRepository;
 
     @Mock
     private GiftCertificateDao certificateDao;
@@ -48,7 +48,7 @@ class OrderServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new OrderService(orderDao, userDao, certificateDao, conversionService);
+        service = new OrderService(orderDao, userRepository, certificateDao, conversionService);
     }
 
     @Test
@@ -94,7 +94,7 @@ class OrderServiceTest {
         OrderDto expected = new OrderDto(orderId, new BigDecimal("10.3"), now.toString(), userDto, certificateDtos);
 
         when(conversionService.convert(orderDto, Order.class)).thenReturn(order);
-        when(userDao.read(userDto.getId())).thenReturn(Optional.of(user));
+        when(userRepository.findById(userDto.getId())).thenReturn(Optional.of(user));
         when(certificateDao.read(dto1.getId())).thenReturn(Optional.of(certificate1));
         when(certificateDao.read(dto2.getId())).thenReturn(Optional.of(certificate2));
         when(conversionService.convert(createdOrder, OrderDto.class)).thenReturn(expected);
@@ -302,7 +302,7 @@ class OrderServiceTest {
         OrderDto expected = new OrderDto(orderId, new BigDecimal("20.3"), now.toString(), userDto, certificateDtos);
 
         when(orderDao.read(orderId)).thenReturn(Optional.of(order));
-        when(userDao.read(userDto.getId())).thenReturn(Optional.of(user));
+        when(userRepository.findById(userDto.getId())).thenReturn(Optional.of(user));
         when(certificateDao.read(dto1.getId())).thenReturn(Optional.of(certificate1));
         when(certificateDao.read(dto2.getId())).thenReturn(Optional.of(certificate2));
         when(orderDao.update(order)).thenReturn(order);

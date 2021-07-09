@@ -9,9 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -102,6 +107,48 @@ public class UserController {
     public List<OrderDto> receiveUserOrders(@PathVariable int id) {
         accessValidator.validate(id);
         return service.readUserOrders(id);
+    }
+
+    /**
+     * Updates user
+     * @param id user id
+     * @param user user data
+     * @return updated user
+     */
+    @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
+    @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public UserDto updateUser(@PathVariable int id, @RequestBody UserDto user) {
+        accessValidator.validate(id);
+        user.setId(id);
+        UserDto updatedUser = service.update(user);
+        Link selfLink = createSelfLink(updatedUser);
+        updatedUser.add(selfLink);
+        return updatedUser;
+    }
+
+    /**
+     * creates user
+     * @param user user data
+     * @return created user
+     */
+    @PostMapping(consumes = "application/json", produces = "application/json")
+    public UserDto createUser(@RequestBody UserDto user) {
+        UserDto createdUser = service.create(user);
+        Link selfLink = createSelfLink(createdUser);
+        createdUser.add(selfLink);
+        return createdUser;
+    }
+
+    /**
+     * Deletes user
+     * @param id user id
+     * @return server response
+     */
+    @DeleteMapping(value = "/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteUser(@PathVariable int id) {
+        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();
     }
 
     private void addSelfLinks(List<UserDto> users) {

@@ -65,6 +65,15 @@ public class User {
         this.lastName = lastName;
     }
 
+    public User(int id, String login, String password, String firstName, String lastName, Set<Role> roles) {
+        this.id = id;
+        this.login = login;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.roles = roles;
+    }
+
     public int getId() {
         return id;
     }

@@ -2,7 +2,7 @@ package com.epam.esm.service.maintenance;
 
 import com.epam.esm.repository.dao.GiftCertificateDao;
 import com.epam.esm.repository.dao.OrderDao;
-import com.epam.esm.repository.dao.UserDao;
+import com.epam.esm.repository.dao.UserRepository;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Order;
 import com.epam.esm.repository.model.User;
@@ -15,6 +15,8 @@ import com.epam.esm.service.exception.NoSuchPageException;
 import com.epam.esm.service.exception.NoSuchUserException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,15 +28,15 @@ import java.util.stream.Collectors;
 @Service
 public class OrderService implements CommonService<OrderDto> {
     private final OrderDao orderDao;
-    private final UserDao userDao;
+    private final UserRepository userRepository;
     private final GiftCertificateDao certificateDao;
     private final ConversionService conversionService;
 
     @Autowired
-    public OrderService(OrderDao orderDao, UserDao userDao, GiftCertificateDao certificateDao,
+    public OrderService(OrderDao orderDao, UserRepository userRepository, GiftCertificateDao certificateDao,
                         ConversionService conversionService) {
         this.orderDao = orderDao;
-        this.userDao = userDao;
+        this.userRepository = userRepository;
         this.certificateDao = certificateDao;
         this.conversionService = conversionService;
     }
@@ -49,7 +51,7 @@ public class OrderService implements CommonService<OrderDto> {
         if (order == null) {
             throw new IllegalArgumentException("null");
         }
-        User user = extractUser(dto.getUser());
+        User user = extractUser();
         List<GiftCertificate> certificates = extractCertificates(dto.getGiftCertificates());
         order.setUser(user);
         order.setGiftCertificates(certificates);
@@ -110,8 +112,24 @@ public class OrderService implements CommonService<OrderDto> {
         return orderDao.fetchNumberOfPages(size);
     }
 
+    private User extractUser() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String login;
+        if (principal instanceof UserDetails) {
+            login = ((UserDetails) principal).getUsername();
+        } else {
+            login = principal.toString();
+        }
+        User user = userRepository.findByLogin(login);
+        if (user != null) {
+            return user;
+        } else {
+            throw new NoSuchUserException();
+        }
+    }
+
     private User extractUser(UserDto userDto) {
-        Optional<User> user = userDao.read(userDto.getId());
+        Optional<User> user = userRepository.findById(userDto.getId());
         return user.orElseThrow(() -> new NoSuchUserException(userDto.getId()));
     }
 

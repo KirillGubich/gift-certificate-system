@@ -16,9 +16,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,17 +29,21 @@ public class UserService implements CommonService<UserDto>, UserDetailsService {
     private final UserRepository userRepository;
     private final UserDao userDao;
     private final ConversionService conversionService;
+    private final Set<Role> userRoleSet = new HashSet<>();
 
     @Autowired
     public UserService(UserRepository userRepository, UserDao userDao, ConversionService conversionService) {
         this.userRepository = userRepository;
         this.userDao = userDao;
         this.conversionService = conversionService;
+        Role userRole = new Role(2, "USER");
+        userRoleSet.add(userRole);
     }
 
     @Override
+    @Transactional
     public UserDto create(UserDto dto) {
-        throw new UnsupportedOperationException("User: create");
+        return update(dto);
     }
 
     @Override
@@ -68,13 +74,22 @@ public class UserService implements CommonService<UserDto>, UserDetailsService {
     }
 
     @Override
+    @Transactional
     public UserDto update(UserDto dto) {
-        throw new UnsupportedOperationException("User: update");
+        User user = conversionService.convert(dto, User.class);
+        if (user == null) {
+            throw new IllegalArgumentException();
+        }
+        user.setRoles(userRoleSet);
+        User updatedUser = userRepository.save(user);
+        return conversionService.convert(updatedUser, UserDto.class);
     }
 
     @Override
+    @Transactional
     public boolean delete(int id) {
-        throw new UnsupportedOperationException("User: delete");
+        userRepository.deleteById(id);
+        return true;
     }
 
     @Transactional

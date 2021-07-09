@@ -5,9 +5,11 @@ import com.epam.esm.service.converter.GiftCertificateDtoConverter;
 import com.epam.esm.service.converter.OrderConverter;
 import com.epam.esm.service.converter.OrderDtoConverter;
 import com.epam.esm.service.converter.RoleConverter;
+import com.epam.esm.service.converter.RoleDtoConverter;
 import com.epam.esm.service.converter.TagConverter;
 import com.epam.esm.service.converter.TagDtoConverter;
 import com.epam.esm.service.converter.UserConverter;
+import com.epam.esm.service.converter.UserDtoConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -38,7 +40,9 @@ public class ApplicationConfig implements WebMvcConfigurer {
     public void addFormatters(FormatterRegistry registry) {
         TagConverter tagConverter = new TagConverter();
         RoleConverter roleConverter = new RoleConverter();
+        RoleDtoConverter roleDtoConverter = new RoleDtoConverter();
         UserConverter userConverter = new UserConverter(roleConverter);
+        UserDtoConverter userDtoConverter = new UserDtoConverter(roleDtoConverter);
         GiftCertificateConverter giftCertificateConverter = new GiftCertificateConverter(tagConverter);
         OrderConverter orderConverter = new OrderConverter(userConverter, giftCertificateConverter);
         registry.addConverter(tagConverter);
@@ -46,6 +50,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
         registry.addConverter(orderConverter);
         registry.addConverter(new OrderDtoConverter());
         registry.addConverter(userConverter);
+        registry.addConverter(userDtoConverter);
         registry.addConverter(giftCertificateConverter);
         registry.addConverter(new GiftCertificateDtoConverter());
     }
