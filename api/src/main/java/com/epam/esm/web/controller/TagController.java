@@ -130,7 +130,8 @@ public class TagController {
     @DeleteMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteTag(@PathVariable int id) {
-        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     private void addSelfLinks(List<TagDto> tags) {

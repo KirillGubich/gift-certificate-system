@@ -44,7 +44,6 @@ public interface CommonService<T> {
      * Deletes entity by id
      *
      * @param id entity id
-     * @return true if deleted successfully, else - false
      */
-    boolean delete(int id);
+    void delete(int id);
 }

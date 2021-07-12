@@ -144,7 +144,8 @@ public class CertificateController {
     @DeleteMapping(value = "/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteGiftCertificate(@PathVariable int id) {
-        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**

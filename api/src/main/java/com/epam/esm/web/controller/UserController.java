@@ -41,8 +41,9 @@ public class UserController {
 
     /**
      * Constructor with service and pagination manager
-     *  @param service           user service
-     * @param accessValidator access validator
+     *
+     * @param service           user service
+     * @param accessValidator   access validator
      * @param paginationManager user pagination manager
      */
     @Autowired
@@ -111,7 +112,8 @@ public class UserController {
 
     /**
      * Updates user
-     * @param id user id
+     *
+     * @param id   user id
      * @param user user data
      * @return updated user
      */
@@ -129,6 +131,7 @@ public class UserController {
 
     /**
      * creates user
+     *
      * @param user user data
      * @return created user
      */
@@ -142,13 +145,15 @@ public class UserController {
 
     /**
      * Deletes user
+     *
      * @param id user id
      * @return server response
      */
     @DeleteMapping(value = "/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteUser(@PathVariable int id) {
-        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     private void addSelfLinks(List<UserDto> users) {

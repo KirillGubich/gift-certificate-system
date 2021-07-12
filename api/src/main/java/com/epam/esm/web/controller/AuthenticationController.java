@@ -54,7 +54,7 @@ public class AuthenticationController {
      * Logout from system
      *
      * @param request  http request
-     * @param response http responce
+     * @param response http response
      */
     @PostMapping("/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) {

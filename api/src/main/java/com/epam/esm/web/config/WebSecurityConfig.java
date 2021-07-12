@@ -32,16 +32,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .authorizeRequests()
-                .antMatchers("/").permitAll()
-                .antMatchers("/auth/login").permitAll()
-                .antMatchers(HttpMethod.GET, "/tags/**").permitAll()
-                .antMatchers(HttpMethod.GET, "/certificates/**").permitAll()
-                .antMatchers(HttpMethod.PUT, "/users").permitAll()
-                .anyRequest()
-                .authenticated()
+                    .authorizeRequests()
+                    .antMatchers("/").permitAll()
+                    .antMatchers("/auth/login").permitAll()
+                    .antMatchers(HttpMethod.GET, "/tags/**").permitAll()
+                    .antMatchers(HttpMethod.GET, "/certificates/**").permitAll()
+                    .antMatchers(HttpMethod.PUT, "/users").permitAll()
+                    .anyRequest()
+                    .authenticated()
                 .and()
-                .apply(jwtConfigurer);
+                    .apply(jwtConfigurer);
     }
 
     @Bean
@@ -58,7 +58,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     @Profile("dev")
-    protected PasswordEncoder devPasswordEncoder() {
+    protected PasswordEncoder devPasswordEncoder() { //todo remove
         return NoOpPasswordEncoder.getInstance();
     }
 }
