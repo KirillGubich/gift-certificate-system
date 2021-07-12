@@ -10,8 +10,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.util.List;
@@ -20,10 +18,6 @@ import java.util.Set;
 
 @Entity
 @Table(name = DatabaseInfo.USER_TABLE)
-@NamedQueries({
-        @NamedQuery(name = "User_findAll", query = "SELECT u FROM User as u"),
-        @NamedQuery(name = "User_getAmount", query = "SELECT count(u.id) FROM User as u")
-})
 public class User {
 
     @Id

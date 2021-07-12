@@ -1,8 +1,13 @@
 package com.epam.esm.repository.model;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityListeners;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -10,10 +15,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,11 +25,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = DatabaseInfo.CERTIFICATE_TABLE)
-@NamedQueries({
-        @NamedQuery(name = "GiftCertificate_findByName",
-                query = "SELECT c FROM GiftCertificate as c WHERE c.name=:name"),
-        @NamedQuery(name = "GiftCertificate_getAmount", query = "SELECT count(c.id) FROM GiftCertificate as c")
-})
+@EntityListeners(AuditingEntityListener.class)
 public class GiftCertificate {
 
     @Id
@@ -39,9 +36,11 @@ public class GiftCertificate {
     private BigDecimal price;
     private Integer duration;
 
+    @CreatedDate
     @Column(name = DatabaseInfo.CERTIFICATE_CREATE_DATE_COLUMN)
     private LocalDateTime createDate;
 
+    @LastModifiedDate
     @Column(name = DatabaseInfo.CERTIFICATE_LAST_UPDATE_COLUMN)
     private LocalDateTime lastUpdateDate;
 
@@ -56,18 +55,6 @@ public class GiftCertificate {
     private List<Order> orders;
 
     protected GiftCertificate() {
-    }
-
-    @PrePersist
-    public void onPrePersist() {
-        LocalDateTime now = LocalDateTime.now();
-        createDate = now;
-        lastUpdateDate = now;
-    }
-
-    @PreUpdate
-    public void onPreUpdate() {
-        lastUpdateDate = LocalDateTime.now();
     }
 
     public int getId() {

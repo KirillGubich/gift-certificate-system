@@ -22,7 +22,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -30,6 +29,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import javax.security.sasl.AuthenticationException;
 import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashSet;
@@ -271,7 +271,7 @@ public class RestExceptionHandler {
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorInfo> handleAuthenticationException(Locale locale) {
+    public ResponseEntity<ErrorInfo> handleAuthenticationException(AuthenticationException e, Locale locale) {
         String errorMessage = messageManager.receiveMessage(INCORRECT_AUTHENTICATION_PROPERTY, locale);
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.UNAUTHORIZED_ACCESS);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
