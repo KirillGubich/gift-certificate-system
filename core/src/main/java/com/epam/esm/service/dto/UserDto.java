@@ -32,19 +32,12 @@ public class UserDto extends RepresentationModel<UserDto> {
     public UserDto() {
     }
 
-    public UserDto(int id, String login, String password) {
-        this.id = id;
-        this.login = login;
-        this.password = password;
-    }
-
-    public UserDto(int id, String login, String password, String firstName, String lastName, Set<RoleDto> roles) {
+    public UserDto(int id, String login, String password, String firstName, String lastName) {
         this.id = id;
         this.login = login;
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.roles = roles;
     }
 
     public int getId() {

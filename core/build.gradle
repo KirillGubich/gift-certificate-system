@@ -26,5 +26,5 @@ test {
 }
 
 jar {
-//    dependsOn 'test'
+    dependsOn 'test'
 }

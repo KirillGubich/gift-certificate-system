@@ -1,8 +1,9 @@
 package com.epam.esm.service.maintenance;
 
 import com.epam.esm.repository.config.TestConfig;
-import com.epam.esm.repository.dao.GiftCertificateDao;
-import com.epam.esm.repository.dao.TagDao;
+import com.epam.esm.repository.criteria.GiftCertificateCriteria;
+import com.epam.esm.repository.dao.GiftCertificateRepository;
+import com.epam.esm.repository.dao.TagRepository;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.SortType;
 import com.epam.esm.repository.model.SortValue;
@@ -19,6 +20,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -31,7 +35,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
@@ -42,10 +46,10 @@ import static org.mockito.Mockito.when;
 class GiftCertificateServiceTest {
 
     @Mock
-    private GiftCertificateDao certificateDao;
+    private GiftCertificateRepository certificateRepository;
 
     @Mock
-    private TagDao tagDao;
+    private TagRepository tagRepository;
 
     @Mock
     private GiftCertificateValidator validator;
@@ -58,7 +62,7 @@ class GiftCertificateServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new GiftCertificateService(validator, certificateDao, tagDao, conversionService);
+        service = new GiftCertificateService(validator, certificateRepository, tagRepository, conversionService);
     }
 
     @Test
@@ -105,8 +109,8 @@ class GiftCertificateServiceTest {
                 .withTags(tagDtos)
                 .build();
 
-        when(tagDao.readByName(anyString())).thenReturn(Optional.of(tag));
-        when(certificateDao.create(any(GiftCertificate.class))).thenReturn(createdCertificate);
+        when(tagRepository.findByName(anyString())).thenReturn(Optional.of(tag));
+        when(certificateRepository.saveAndFlush(any(GiftCertificate.class))).thenReturn(createdCertificate);
         when(conversionService.convert(certificateDto, GiftCertificate.class)).thenReturn(certificate);
         when(conversionService.convert(createdCertificate, GiftCertificateDto.class)).thenReturn(expected);
 
@@ -131,7 +135,7 @@ class GiftCertificateServiceTest {
                 .withTags(new HashSet<>())
                 .build();
 
-        when(certificateDao.read(id)).thenReturn(Optional.of(certificate));
+        when(certificateRepository.findById(id)).thenReturn(Optional.of(certificate));
         when(conversionService.convert(certificate, GiftCertificateDto.class)).thenReturn(expected);
 
         GiftCertificateDto actual = service.read(id);
@@ -140,7 +144,7 @@ class GiftCertificateServiceTest {
 
     @Test
     void read_throwException_whenNotExist() {
-        when(certificateDao.read(anyInt())).thenReturn(Optional.empty());
+        when(certificateRepository.findById(anyInt())).thenReturn(Optional.empty());
         assertThrows(NoSuchCertificateException.class, () -> service.read(1));
     }
 
@@ -177,7 +181,7 @@ class GiftCertificateServiceTest {
                 .build();
         List<GiftCertificate> certificates = Arrays.asList(certificate1, certificate2);
 
-        when(certificateDao.readAll()).thenReturn(certificates);
+        when(certificateRepository.findAll()).thenReturn(certificates);
         when(conversionService.convert(certificate1, GiftCertificateDto.class)).thenReturn(dto1);
         when(conversionService.convert(certificate2, GiftCertificateDto.class)).thenReturn(dto2);
 
@@ -190,6 +194,7 @@ class GiftCertificateServiceTest {
     void readWithParameters_getListOfCertificates_whenExist() {
         int page = 2;
         int size = 20;
+        long count = 100;
         SortType sortType = SortType.ASCENDING;
         SortValue sortValue = SortValue.NAME;
         LocalDateTime now = LocalDateTime.now();
@@ -222,11 +227,11 @@ class GiftCertificateServiceTest {
                 .withTags(new HashSet<>())
                 .build();
         List<GiftCertificate> certificates = Arrays.asList(certificate1, certificate2);
-
-        when(certificateDao.readWithParameters(page, size, sortValue, sortType)).thenReturn(certificates);
+        Page<GiftCertificate> pageCertificates = new PageImpl<>(certificates);
+        when(certificateRepository.findAll(any(PageRequest.class))).thenReturn(pageCertificates);
         when(conversionService.convert(certificate1, GiftCertificateDto.class)).thenReturn(dto1);
         when(conversionService.convert(certificate2, GiftCertificateDto.class)).thenReturn(dto2);
-        when(certificateDao.fetchNumberOfPages(size)).thenReturn(page + 1);
+        when(certificateRepository.count()).thenReturn(count);
 
         List<GiftCertificateDto> expected = Arrays.asList(dto1, dto2);
         List<GiftCertificateDto> actual = service.readWithParameters(page, size, sortValue, sortType);
@@ -273,8 +278,8 @@ class GiftCertificateServiceTest {
                 .withTags(new HashSet<>())
                 .build();
 
-        when(certificateDao.read(id)).thenReturn(Optional.of(oldCertificate));
-        when(certificateDao.update(any(GiftCertificate.class))).thenReturn(updatedCertificate);
+        when(certificateRepository.findById(id)).thenReturn(Optional.of(oldCertificate));
+        when(certificateRepository.saveAndFlush(any(GiftCertificate.class))).thenReturn(updatedCertificate);
         when(validator.validateName(anyString())).thenAnswer(i -> i.getArguments()[0]);
         when(validator.validateDuration(anyInt())).thenAnswer(i -> i.getArguments()[0]);
         when(conversionService.convert(updatedCertificate, GiftCertificateDto.class)).thenReturn(expected);
@@ -285,15 +290,131 @@ class GiftCertificateServiceTest {
 
     @Test
     void update_throwException_whenNotExist() {
-        when(certificateDao.read(anyInt())).thenReturn(Optional.empty());
+        when(certificateRepository.findById(anyInt())).thenReturn(Optional.empty());
         assertThrows(NotExistentUpdateException.class, () -> service.update(GiftCertificateDto.builder().build()));
     }
 
     @Test
     void delete_returnTrue_whenDeletedSuccessfully() {
         int id = 1;
-        when(certificateDao.delete(id)).thenReturn(true);
-        boolean actual = service.delete(id);
-        assertTrue(actual);
+        service.delete(id);
+    }
+
+    @Test
+    void searchByCriteria_getListOfCertificates_whenTagsProvided() {
+        int page = 2;
+        int size = 4;
+
+        GiftCertificateCriteria criteria = GiftCertificateCriteria.builder()
+                .withName("ab")
+                .withSortValue(SortValue.NAME)
+                .withSortType(SortType.DESCENDING)
+                .withTagNames(Arrays.asList("Office", "Sport"))
+                .build();
+
+        LocalDateTime now = LocalDateTime.now();
+        GiftCertificate certificate1 = GiftCertificate.builder()
+                .withId(1)
+                .withName("abc")
+                .withDuration(10)
+                .withCreateDate(now)
+                .withLastUpdateDate(now)
+                .withTags(new HashSet<>())
+                .build();
+        GiftCertificate certificate2 = GiftCertificate.builder()
+                .withId(2)
+                .withName("qab")
+                .withDuration(20)
+                .withCreateDate(now)
+                .withLastUpdateDate(now)
+                .withTags(new HashSet<>())
+                .build();
+        GiftCertificateDto dto1 = GiftCertificateDto.builder()
+                .withId(1)
+                .withName("abc")
+                .withDuration(10)
+                .withCreateDate(now.toString())
+                .withLastUpdateDate(now.toString())
+                .withTags(new HashSet<>())
+                .build();
+        GiftCertificateDto dto2 = GiftCertificateDto.builder()
+                .withId(2)
+                .withName("qab")
+                .withDuration(20)
+                .withCreateDate(now.toString())
+                .withLastUpdateDate(now.toString())
+                .withTags(new HashSet<>())
+                .build();
+        List<GiftCertificate> certificates = Arrays.asList(certificate1, certificate2);
+        Page<GiftCertificate> certificatePage = new PageImpl<>(certificates);
+
+        when(conversionService.convert(certificate1, GiftCertificateDto.class)).thenReturn(dto1);
+        when(conversionService.convert(certificate2, GiftCertificateDto.class)).thenReturn(dto2);
+        when(certificateRepository
+                .findAllByNameContainsAndDescriptionContainsAndTagsNameIn(anyString(), anyString(),
+                        anyCollection(), any(PageRequest.class)))
+                .thenReturn(certificatePage);
+
+        List<GiftCertificateDto> expected = Arrays.asList(dto1, dto2);
+        List<GiftCertificateDto> actual = service.searchByCriteria(criteria, page, size);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void searchByCriteria_getListOfCertificates_whenTagsNotProvided() {
+        int page = 2;
+        int size = 4;
+
+        GiftCertificateCriteria criteria = GiftCertificateCriteria.builder()
+                .withName("ab")
+                .withSortValue(SortValue.NAME)
+                .withSortType(SortType.DESCENDING)
+                .build();
+
+        LocalDateTime now = LocalDateTime.now();
+        GiftCertificate certificate1 = GiftCertificate.builder()
+                .withId(1)
+                .withName("abc")
+                .withDuration(10)
+                .withCreateDate(now)
+                .withLastUpdateDate(now)
+                .withTags(new HashSet<>())
+                .build();
+        GiftCertificate certificate2 = GiftCertificate.builder()
+                .withId(2)
+                .withName("qab")
+                .withDuration(20)
+                .withCreateDate(now)
+                .withLastUpdateDate(now)
+                .withTags(new HashSet<>())
+                .build();
+        GiftCertificateDto dto1 = GiftCertificateDto.builder()
+                .withId(1)
+                .withName("abc")
+                .withDuration(10)
+                .withCreateDate(now.toString())
+                .withLastUpdateDate(now.toString())
+                .withTags(new HashSet<>())
+                .build();
+        GiftCertificateDto dto2 = GiftCertificateDto.builder()
+                .withId(2)
+                .withName("qab")
+                .withDuration(20)
+                .withCreateDate(now.toString())
+                .withLastUpdateDate(now.toString())
+                .withTags(new HashSet<>())
+                .build();
+        List<GiftCertificate> certificates = Arrays.asList(certificate1, certificate2);
+        Page<GiftCertificate> certificatePage = new PageImpl<>(certificates);
+
+        when(conversionService.convert(certificate1, GiftCertificateDto.class)).thenReturn(dto1);
+        when(conversionService.convert(certificate2, GiftCertificateDto.class)).thenReturn(dto2);
+        when(certificateRepository
+                .findAllByNameContainsAndDescriptionContains(anyString(), anyString(), any(PageRequest.class)))
+                .thenReturn(certificatePage);
+
+        List<GiftCertificateDto> expected = Arrays.asList(dto1, dto2);
+        List<GiftCertificateDto> actual = service.searchByCriteria(criteria, page, size);
+        assertEquals(expected, actual);
     }
 }

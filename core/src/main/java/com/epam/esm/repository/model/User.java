@@ -45,12 +45,6 @@ public class User {
     public User() {
     }
 
-    public User(int id, String login, String password) {
-        this.id = id;
-        this.login = login;
-        this.password = password;
-    }
-
     public User(int id, String login, String password, String firstName, String lastName) {
         this.id = id;
         this.login = login;

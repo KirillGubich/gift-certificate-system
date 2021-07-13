@@ -13,36 +13,37 @@ import org.mockito.MockitoAnnotations;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class UserConverterTest {
+class UserDtoConverterTest {
 
     @Mock
-    private RoleConverter roleConverter;
+    private RoleDtoConverter roleDtoConverter;
 
-    private UserConverter converter;
+    private UserDtoConverter converter;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        converter = new UserConverter(roleConverter);
+        converter = new UserDtoConverter(roleDtoConverter);
     }
 
     @Test
     void convert() {
-        Set<Role> roles = new HashSet<>();
-        Role role = new Role(1, "ADMIN");
-        roles.add(role);
         Set<RoleDto> roleDtos = new HashSet<>();
         RoleDto roleDto = new RoleDto(1, "ADMIN");
         roleDtos.add(roleDto);
-        User user = new User(1, "login", "Password", "name", "surname");
-        user.setRoles(roles);
-        UserDto expected = new UserDto(1, "login", "Password",
+        Set<Role> roles = new HashSet<>();
+        Role role = new Role(1, "ADMIN");
+        roles.add(role);
+        UserDto userDto = new UserDto(1, "login", "Password", "name",
+                "surname");
+        userDto.setRoles(roleDtos);
+        User expected = new User(1, "login", "Password",
                 "name", "surname");
-        expected.setRoles(roleDtos);
-        Mockito.when(roleConverter.convert(role)).thenReturn(roleDto);
-        UserDto actual = converter.convert(user);
+        expected.setRoles(roles);
+        Mockito.when(roleDtoConverter.convert(roleDto)).thenReturn(role);
+        User actual = converter.convert(userDto);
         assertEquals(expected, actual);
     }
 }

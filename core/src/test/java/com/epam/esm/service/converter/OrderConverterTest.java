@@ -40,8 +40,8 @@ class OrderConverterTest {
     void convert() {
         int userId = 1;
         int orderId = 2;
-        User user = new User(userId, "name", "password");
-        UserDto userDto = new UserDto(userId, "name", "password");
+        User user = new User(userId, "login", "password", "name", "surname");
+        UserDto userDto = new UserDto(userId, "login", "password", "name", "surname");
         LocalDateTime now = LocalDateTime.now();
         GiftCertificate certificate1 = GiftCertificate.builder()
                 .withId(1)
