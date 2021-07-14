@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,11 +32,14 @@ public class UserService implements CommonService<UserDto>, UserDetailsService {
     private final UserRepository userRepository;
     private final ConversionService conversionService;
     private final Set<Role> userRoleSet = new HashSet<>();
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, ConversionService conversionService) {
+    public UserService(UserRepository userRepository, ConversionService conversionService,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.conversionService = conversionService;
+        this.passwordEncoder = passwordEncoder;
         Role userRole = new Role(2, "USER");
         userRoleSet.add(userRole);
     }
@@ -43,6 +47,9 @@ public class UserService implements CommonService<UserDto>, UserDetailsService {
     @Override
     @Transactional
     public UserDto create(UserDto dto) {
+        String password = dto.getPassword();
+        String encodedPassword = passwordEncoder.encode(password);
+        dto.setPassword(encodedPassword);
         return update(dto);
     }
 

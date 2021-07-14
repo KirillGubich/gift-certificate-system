@@ -271,10 +271,10 @@ public class RestExceptionHandler {
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorInfo> handleAuthenticationException(AuthenticationException e, Locale locale) {
+    public ResponseEntity<ErrorInfo> handleAuthenticationException(Locale locale) {
         String errorMessage = messageManager.receiveMessage(INCORRECT_AUTHENTICATION_PROPERTY, locale);
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.UNAUTHORIZED_ACCESS);
-        return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorInfo, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

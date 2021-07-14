@@ -18,6 +18,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -41,12 +42,15 @@ class UserServiceTest {
     @Mock
     private ConversionService conversionService;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     private UserService service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new UserService(userRepository, conversionService);
+        service = new UserService(userRepository, conversionService, passwordEncoder);
     }
 
     @Test

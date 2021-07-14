@@ -13,7 +13,7 @@ import org.mockito.MockitoAnnotations;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class UserConverterTest {
 
@@ -38,7 +38,7 @@ class UserConverterTest {
         roleDtos.add(roleDto);
         User user = new User(1, "login", "Password", "name", "surname");
         user.setRoles(roles);
-        UserDto expected = new UserDto(1, "login", "Password",
+        UserDto expected = new UserDto(1, "login", "",
                 "name", "surname");
         expected.setRoles(roleDtos);
         Mockito.when(roleConverter.convert(role)).thenReturn(roleDto);

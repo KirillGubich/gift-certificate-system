@@ -19,7 +19,7 @@ public class UserConverter implements Converter<User, UserDto> {
     @Override
     public UserDto convert(User source) {
         Set<RoleDto> roles = source.getRoles().stream().map(roleConverter::convert).collect(Collectors.toSet());
-        UserDto userDto = new UserDto(source.getId(), source.getLogin(), source.getPassword(),
+        UserDto userDto = new UserDto(source.getId(), source.getLogin(), "",
                 source.getFirstName(), source.getLastName());
         userDto.setRoles(roles);
         return userDto;
