@@ -105,9 +105,10 @@ public class UserController {
     @GetMapping(value = "/{id}/orders", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public List<OrderDto> receiveUserOrders(@PathVariable int id) {
+    public CollectionModel<OrderDto> receiveUserOrders(@PathVariable int id) {
         accessValidator.validate(id);
-        return service.readUserOrders(id);
+        List<OrderDto> orders = service.readUserOrders(id);
+        return CollectionModel.of(orders);
     }
 
     /**
