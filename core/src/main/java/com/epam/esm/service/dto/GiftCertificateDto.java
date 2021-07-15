@@ -2,6 +2,7 @@ package com.epam.esm.service.dto;
 
 import com.epam.esm.service.validation.ValidationMessageManager;
 import org.springframework.hateoas.RepresentationModel;
+import org.springframework.hateoas.server.core.Relation;
 
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotBlank;
@@ -11,6 +12,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Set;
 
+@Relation(collectionRelation = "giftCertificates", itemRelation = "giftCertificate")
 public class GiftCertificateDto extends RepresentationModel<GiftCertificateDto> {
     private int id;
 
