@@ -1,7 +1,10 @@
 package com.epam.esm.service.dto;
 
+import org.springframework.hateoas.server.core.Relation;
+
 import java.util.Objects;
 
+@Relation(collectionRelation = "roles", itemRelation = "role")
 public class RoleDto {
 
     private int id;

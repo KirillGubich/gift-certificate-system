@@ -32,7 +32,7 @@ public class AccessValidator {
         }
         UserDto user = userService.getByLogin(login);
         Set<String> roles = user.getRoles().stream().map(RoleDto::getName).collect(Collectors.toSet());
-        boolean accessAllowed = roles.contains("ADMIN") || roles.contains("USER") && id == user.getId();
+        boolean accessAllowed = roles.contains("ADMIN") || (roles.contains("USER") && id == user.getId());
         if (!accessAllowed) {
             throw new AccessDeniedException(Integer.toString(id));
         }

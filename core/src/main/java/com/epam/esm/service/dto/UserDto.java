@@ -2,12 +2,14 @@ package com.epam.esm.service.dto;
 
 import com.epam.esm.service.validation.ValidationMessageManager;
 import org.springframework.hateoas.RepresentationModel;
+import org.springframework.hateoas.server.core.Relation;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.util.Objects;
 import java.util.Set;
 
+@Relation(collectionRelation = "users", itemRelation = "user")
 public class UserDto extends RepresentationModel<UserDto> {
 
     private int id;
