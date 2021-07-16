@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'application'
     id 'war'
+    id 'org.springframework.boot' version '2.5.1'
 }
 
 group 'com.epam'
@@ -28,13 +29,16 @@ test {
     useJUnitPlatform()
 }
 
-apply plugin : "java"
 ext {
     javaMainClass = "com.epam.esm.web.GiftCertificateApplication"
 }
 
 application {
     mainClassName = javaMainClass
+}
+
+bootJar {
+    archiveName 'gift-certificate-system.jar'
 }
 
 war {
