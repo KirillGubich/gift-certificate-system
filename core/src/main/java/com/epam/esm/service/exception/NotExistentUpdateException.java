@@ -7,7 +7,6 @@ public class NotExistentUpdateException extends RuntimeException {
 
     private final int id;
 
-
     public NotExistentUpdateException(int id) {
         this.id = id;
     }

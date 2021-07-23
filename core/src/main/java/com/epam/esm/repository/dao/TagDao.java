@@ -1,70 +1,85 @@
 package com.epam.esm.repository.dao;
 
-import com.epam.esm.repository.exception.AbsenceOfNewlyCreatedException;
 import com.epam.esm.repository.exception.TagDuplicateException;
-import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public class TagDao implements CommonDao<Tag> {
 
-    private static final String GET_TAG_BY_ID_SQL = "SELECT id, name FROM tags WHERE id = ?";
-    private static final String GET_TAG_BY_NAME_SQL = "SELECT id, name FROM tags WHERE name = ?";
-    private static final String GET_ALL_TAGS_SQL = "SELECT id, name FROM tags";
-    private static final String DELETE_TAG_BY_ID_SQL = "DELETE FROM tags WHERE id = ?";
-    private static final String CREATE_TAG_SQL = "INSERT INTO tags (name) VALUES (?)";
-
-    private final JdbcTemplate jdbcTemplate;
-    private final GiftCertificateDao giftCertificateDao;
-
-    @Autowired
-    public TagDao(JdbcTemplate jdbcTemplate, GiftCertificateDao giftCertificateDao) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.giftCertificateDao = giftCertificateDao;
-    }
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public Optional<Tag> read(int id) {
-        final List<Tag> queryResult = jdbcTemplate.query(GET_TAG_BY_ID_SQL, new BeanPropertyRowMapper<>(Tag.class), id);
-        return queryResult.stream().findFirst();
+        Tag tag = entityManager.find(Tag.class, id);
+        return tag == null ? Optional.empty() : Optional.of(tag);
     }
 
     public Optional<Tag> readByName(String name) {
-        final List<Tag> queryResult = jdbcTemplate
-                .query(GET_TAG_BY_NAME_SQL, new BeanPropertyRowMapper<>(Tag.class), name);
-        return queryResult.stream().findFirst();
+        try {
+            TypedQuery<Tag> query = entityManager.createNamedQuery("Tag_findByName", Tag.class);
+            query.setParameter("name", name);
+            Tag tag = query.getSingleResult();
+            return Optional.of(tag);
+        } catch (NoResultException ex) {
+            return Optional.empty();
+        }
     }
 
     @Override
     public List<Tag> readAll() {
-        return jdbcTemplate.query(GET_ALL_TAGS_SQL, new BeanPropertyRowMapper<>(Tag.class));
+        TypedQuery<Tag> query = entityManager.createNamedQuery("Tag_findAll", Tag.class);
+        return query.getResultList();
+    }
+
+    public List<Tag> readPaginated(int page, int size) {
+        TypedQuery<Tag> query = entityManager.createNamedQuery("Tag_findAll", Tag.class);
+        query.setFirstResult((page - 1) * size);
+        query.setMaxResults(size);
+        return query.getResultList();
     }
 
     @Override
     public Tag create(Tag entity) {
-        final String name = entity.getName();
         try {
-            jdbcTemplate.update(CREATE_TAG_SQL, name);
+            entityManager.persist(entity);
+            entityManager.flush();
         } catch (DuplicateKeyException e) {
             throw new TagDuplicateException(entity.getName());
         }
-        return readByName(name).orElseThrow(AbsenceOfNewlyCreatedException::new);
+        return entity;
     }
 
     @Override
     public boolean delete(int id) {
-        List<GiftCertificate> certificates = giftCertificateDao.fetchCertificatesByTagId(id);
-        for (GiftCertificate certificate : certificates) {
-            giftCertificateDao.removeTagFromCertificate(certificate.getId(), id);
+        Optional<Tag> tag = read(id);
+        tag.ifPresent(entityManager::remove);
+        return tag.isPresent();
+    }
+
+    public int fetchNumberOfPages(int size) {
+        Query query = entityManager.createNamedQuery("Tag_getAmount");
+        Long count = (Long) query.getSingleResult();
+        int pages = count.intValue() / size;
+        if (count % size > 0) {
+            pages++;
         }
-        return jdbcTemplate.update(DELETE_TAG_BY_ID_SQL, id) > 0;
+        return pages;
+    }
+
+    public Optional<Tag> readMostWidelyUsedTag() {
+        Query query = entityManager.createNamedQuery("Tag_getMostUsedTag", Tag.class);
+        Tag tag = (Tag) query.getSingleResult();
+        return tag == null ? Optional.empty() : Optional.of(tag);
     }
 }

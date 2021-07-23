@@ -1,8 +1,14 @@
 package com.epam.esm.web.controller;
 
+import com.epam.esm.repository.criteria.GiftCertificateCriteria;
+import com.epam.esm.repository.model.SortType;
+import com.epam.esm.repository.model.SortValue;
 import com.epam.esm.service.dto.GiftCertificateDto;
 import com.epam.esm.service.maintenance.GiftCertificateService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.Link;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,10 +21,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.Collections;
+import javax.validation.constraints.Digits;
+import javax.validation.constraints.Positive;
 import java.util.List;
+
+import static com.epam.esm.web.pagination.PaginationManager.LAST_PAGE_PARAMETER;
+import static com.epam.esm.web.pagination.PaginationManager.NEXT_PAGE_PARAMETER;
+import static com.epam.esm.web.pagination.PaginationManager.PREVIOUS_PAGE_PARAMETER;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 /**
  * Class controller for interacting with {@link GiftCertificateDto} objects.
@@ -27,52 +41,64 @@ import java.util.List;
 @RequestMapping("/certificates")
 public class CertificateController {
 
-    private static final String DESCENDING_SORT_TYPE_PARAMETER = "desc";
-    private static final String ASCENDING_SORT_TYPE_PARAMETER = "asc";
-    private static final String NAME_SORT_VALUE_PARAMETER = "name";
-    private static final String DATE_SORT_VALUE_PARAMETER = "date";
-    private GiftCertificateService service;
+    private final GiftCertificateService service;
 
     /**
-     * Sets {@link GiftCertificateService}
+     * Constructor with service
      *
-     * @param service - {@link GiftCertificateService} object
+     * @param service {@link GiftCertificateService} object
      */
     @Autowired
-    public void setService(GiftCertificateService service) {
+    public CertificateController(GiftCertificateService service) {
         this.service = service;
     }
 
     /**
      * Gets all {@link GiftCertificateDto} objects taking into account search parameters
      *
-     * @param tag         tag name
+     * @param request     http request
+     * @param tags        tag names
      * @param sortObject  by which objects to sort
-     * @param sortType    sorting type (asc/desc)
-     * @param searchType  by which parameter to search
-     * @param searchValue value to search
+     * @param sortOrder   sorting type (asc/desc)
+     * @param name        certificate name or part of it
+     * @param description certificate description or part of it
+     * @param page        page number
+     * @param size        amount of items on page
      * @return - list of {@link GiftCertificateDto}
      */
     @GetMapping(produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
-    public List<GiftCertificateDto> receiveAllGiftCertificates(
-            @RequestParam(required = false, name = "tag") String tag,
+    public CollectionModel<GiftCertificateDto> receiveAllGiftCertificates(
+            HttpServletRequest request,
+            @RequestParam(required = false, name = "tags") List<String> tags,
             @RequestParam(required = false, name = "sort_by") String sortObject,
-            @RequestParam(required = false, name = "order_by") String sortType,
-            @RequestParam(required = false, name = "search_by") String searchType,
-            @RequestParam(required = false, name = "search_value") String searchValue) {
+            @RequestParam(required = false, name = "order_by") String sortOrder,
+            @RequestParam(required = false, name = "name") String name,
+            @RequestParam(required = false, name = "description") String description,
+            @RequestParam(required = false, name = "page") @Positive @Digits(integer = 4, fraction = 0) Integer page,
+            @RequestParam(required = false, name = "size") @Positive @Digits(integer = 4, fraction = 0) Integer size) {
         List<GiftCertificateDto> certificates;
-        if (searchType != null) {
-            certificates = searchByParams(searchType, searchValue);
+        SortType sortType = SortType.of(sortOrder);
+        SortValue sortValue = SortValue.of(sortObject);
+        boolean hasSearchParameters = tags != null || name != null || description != null;
+        boolean needSort = sortObject != null || sortOrder != null;
+        boolean needPagination = page != null && size != null;
+        if (hasSearchParameters) {
+            GiftCertificateCriteria criteria = buildCriteria(tags, name, description, sortType, sortValue);
+            certificates = service.searchByCriteria(criteria, page, size);
+        } else if (needSort || needPagination) {
+            certificates = service.readWithParameters(page, size, sortValue, sortType);
         } else {
             certificates = service.readAll();
         }
-        if (tag != null) {
-            List<GiftCertificateDto> certificatesByTag = service.searchByTagName(tag);
-            certificates.retainAll(certificatesByTag);
+        addSelfLinks(certificates);
+        Link link = linkTo(CertificateController.class).withSelfRel();
+        CollectionModel<GiftCertificateDto> collection = CollectionModel.of(certificates, link);
+        if (needPagination && !hasSearchParameters) {
+            String url = request.getRequestURL().toString() + "?" + request.getQueryString();
+            createPageLinks(url, page, size, collection);
         }
-        processCertificatesSort(certificates, sortObject, sortType);
-        return certificates;
+        return collection;
     }
 
     /**
@@ -84,7 +110,10 @@ public class CertificateController {
     @GetMapping(value = "/{id}", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
     public GiftCertificateDto receiveGiftCertificate(@PathVariable int id) {
-        return service.read(id);
+        GiftCertificateDto certificate = service.read(id);
+        Link selfLink = createSelfLink(certificate);
+        certificate.add(selfLink);
+        return certificate;
     }
 
     /**
@@ -94,9 +123,14 @@ public class CertificateController {
      * @return newly created {@link GiftCertificateDto}
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
-    @ResponseStatus(HttpStatus.CREATED)
-    public GiftCertificateDto createGiftCertificate(@Valid @RequestBody GiftCertificateDto giftCertificate) {
-        return service.create(giftCertificate);
+    public ResponseEntity<GiftCertificateDto> createGiftCertificate(
+            @Valid @RequestBody GiftCertificateDto giftCertificate) {
+        GiftCertificateDto certificate = service.create(giftCertificate);
+        Link selfLink = createSelfLink(certificate);
+        certificate.add(selfLink);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(selfLink.toUri());
+        return new ResponseEntity<>(certificate, headers, HttpStatus.CREATED);
     }
 
     /**
@@ -107,8 +141,7 @@ public class CertificateController {
      */
     @DeleteMapping(value = "/{id}")
     public ResponseEntity<?> deleteGiftCertificate(@PathVariable int id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
+        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();
     }
 
     /**
@@ -123,48 +156,65 @@ public class CertificateController {
     public GiftCertificateDto updateGiftCertificate(@PathVariable int id,
                                                     @RequestBody GiftCertificateDto giftCertificate) {
         giftCertificate.setId(id);
-        return service.update(giftCertificate);
+        GiftCertificateDto certificate = service.update(giftCertificate);
+        Link selfLink = createSelfLink(certificate);
+        certificate.add(selfLink);
+        return certificate;
     }
 
-    private List<GiftCertificateDto> searchByParams(String searchType, String searchValue) {
-        List<GiftCertificateDto> certificates;
-        switch (searchType) {
-            case "tag":
-                certificates = service.searchByTagName(searchValue);
-                break;
-            case "name":
-                certificates = service.searchByPartOfName(searchValue);
-                break;
-            case "description":
-                certificates = service.searchByPartOfDescription(searchValue);
-                break;
-            default:
-                certificates = Collections.emptyList();
-        }
-        return certificates;
+    private GiftCertificateCriteria buildCriteria(List<String> tags, String name, String description,
+                                                  SortType sortType, SortValue sortValue) {
+        return GiftCertificateCriteria.builder()
+                .withName(name)
+                .withDescription(description)
+                .withTagNames(tags)
+                .withSortType(sortType)
+                .withSortValue(sortValue)
+                .build();
     }
 
-    private void processCertificatesSort(List<GiftCertificateDto> certificates, String sortObject, String sortType) {
-        if (NAME_SORT_VALUE_PARAMETER.equals(sortObject)) {
-            processSortByName(certificates, sortType);
-        } else if (DATE_SORT_VALUE_PARAMETER.equals(sortObject)) {
-            processSortByDate(certificates, sortType);
+    private void createPageLinks(String url, int page, int size, CollectionModel<GiftCertificateDto> collection) {
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url);
+        int lastPage = service.getLastPage(size);
+        if (hasPreviousPage(page)) {
+            String prevPageUri = uriBuilder
+                    .replaceQueryParam("page", page - 1)
+                    .toUriString();
+            Link prevLink = Link.of(prevPageUri, PREVIOUS_PAGE_PARAMETER);
+            collection.add(prevLink);
+        }
+        if (hasNextPage(page, lastPage)) {
+            String nextPageUri = uriBuilder
+                    .replaceQueryParam("page", page + 1)
+                    .toUriString();
+            Link nextLink = Link.of(nextPageUri, NEXT_PAGE_PARAMETER);
+            collection.add(nextLink);
+        }
+        String lastPageUri = uriBuilder
+                .replaceQueryParam("page", lastPage)
+                .toUriString();
+        Link lastLink = Link.of(lastPageUri, LAST_PAGE_PARAMETER);
+        collection.add(lastLink);
+    }
+
+    private void addSelfLinks(List<GiftCertificateDto> certificates) {
+        for (GiftCertificateDto certificate : certificates) {
+            Link selfLink = createSelfLink(certificate);
+            certificate.add(selfLink);
         }
     }
 
-    private void processSortByName(List<GiftCertificateDto> certificates, String sortType) {
-        if (ASCENDING_SORT_TYPE_PARAMETER.equals(sortType)) {
-            service.sortByNameAscending(certificates);
-        } else if (DESCENDING_SORT_TYPE_PARAMETER.equals(sortType)) {
-            service.sortByNameDescending(certificates);
-        }
+    private Link createSelfLink(GiftCertificateDto certificate) {
+        return linkTo(CertificateController.class)
+                .slash(certificate.getId())
+                .withSelfRel();
     }
 
-    private void processSortByDate(List<GiftCertificateDto> certificates, String sortType) {
-        if (ASCENDING_SORT_TYPE_PARAMETER.equals(sortType)) {
-            service.sortByDateAscending(certificates);
-        } else if (DESCENDING_SORT_TYPE_PARAMETER.equals(sortType)) {
-            service.sortByDateDescending(certificates);
-        }
+    private boolean hasNextPage(int page, int lastPage) {
+        return page < lastPage;
+    }
+
+    private boolean hasPreviousPage(int page) {
+        return page > 1;
     }
 }

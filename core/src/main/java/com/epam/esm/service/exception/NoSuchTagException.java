@@ -5,10 +5,13 @@ package com.epam.esm.service.exception;
  */
 public class NoSuchTagException extends RuntimeException {
 
-    private final int id;
+    private int id;
 
     public NoSuchTagException(int id) {
         this.id = id;
+    }
+
+    public NoSuchTagException() {
     }
 
     public int getId() {

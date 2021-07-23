@@ -39,4 +39,28 @@ public class ValidationMessageManager {
      */
     public static final String CERTIFICATE_DURATION_INVALID =
             "Certificate duration has to be positive max digits: 10, fraction: 0.";
+
+    /**
+     * Indicates that user name is blank.
+     */
+    public static final String BLANK_USER_NAME = "User name can't be blank.";
+
+    /**
+     * Indicates that user name has wrong length.
+     */
+    public static final String USER_NAME_WRONG_SIZE = "User name has to be from 3 to 100 characters.";
+
+
+    /**
+     * Indicates that user password has wrong length.
+     */
+    public static final String USER_PASSWORD_WRONG_SIZE = "User password has to be from 8 to 200 characters.";
+
+    /**
+     * Indicates that order cost is not valid.
+     */
+    public static final String ORDER_COST_INVALID =
+            "Order cost has to be positive, max digits: 10, fraction: 2.";
+
+
 }
