@@ -1,8 +1,8 @@
 package com.epam.esm.service.maintenance;
 
 import com.epam.esm.repository.criteria.GiftCertificateCriteria;
-import com.epam.esm.repository.dao.GiftCertificateDao;
-import com.epam.esm.repository.dao.TagDao;
+import com.epam.esm.repository.dao.GiftCertificateRepository;
+import com.epam.esm.repository.dao.TagRepository;
 import com.epam.esm.repository.model.GiftCertificate;
 import com.epam.esm.repository.model.SortType;
 import com.epam.esm.repository.model.SortValue;
@@ -15,9 +15,13 @@ import com.epam.esm.service.exception.NotExistentUpdateException;
 import com.epam.esm.service.validation.GiftCertificateValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -27,16 +31,17 @@ import java.util.stream.Collectors;
 @Service
 public class GiftCertificateService implements CommonService<GiftCertificateDto> {
     private final GiftCertificateValidator validator;
-    private final GiftCertificateDao certificateDao;
-    private final TagDao tagDao;
+    private final GiftCertificateRepository certificateRepository;
+    private final TagRepository tagRepository;
     private final ConversionService conversionService;
 
     @Autowired
-    public GiftCertificateService(GiftCertificateValidator validator, GiftCertificateDao certificateDao,
-                                  TagDao tagDao, ConversionService conversionService) {
+    public GiftCertificateService(GiftCertificateValidator validator,
+                                  GiftCertificateRepository certificateRepository, TagRepository tagRepository,
+                                  ConversionService conversionService) {
         this.validator = validator;
-        this.certificateDao = certificateDao;
-        this.tagDao = tagDao;
+        this.certificateRepository = certificateRepository;
+        this.tagRepository = tagRepository;
         this.conversionService = conversionService;
     }
 
@@ -55,13 +60,13 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         }
         Set<Tag> tags = processTags(dto.getTags());
         entity.setTags(tags);
-        GiftCertificate giftCertificate = certificateDao.create(entity);
+        GiftCertificate giftCertificate = certificateRepository.saveAndFlush(entity);
         return conversionService.convert(giftCertificate, GiftCertificateDto.class);
     }
 
     @Override
     public GiftCertificateDto read(int id) {
-        final Optional<GiftCertificate> giftCertificate = certificateDao.read(id);
+        final Optional<GiftCertificate> giftCertificate = certificateRepository.findById(id);
         GiftCertificate certificate = giftCertificate
                 .orElseThrow(() -> new NoSuchCertificateException(id));
         return conversionService.convert(certificate, GiftCertificateDto.class);
@@ -69,7 +74,9 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
 
     @Override
     public List<GiftCertificateDto> readAll() {
-        List<GiftCertificate> certificates = certificateDao.readAll();
+        List<GiftCertificate> certificates = new ArrayList<>();
+        final Iterable<GiftCertificate> allCertificates = certificateRepository.findAll();
+        allCertificates.forEach(certificates::add);
         return certificates.stream()
                 .map(certificate -> conversionService.convert(certificate, GiftCertificateDto.class))
                 .collect(Collectors.toList());
@@ -77,13 +84,17 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
 
     public List<GiftCertificateDto> readWithParameters(Integer page, Integer size, SortValue sortValue,
                                                        SortType sortType) {
+        Sort sort = extractSort(sortValue, sortType);
+        List<GiftCertificate> certificates = new ArrayList<>();
         if (size != null && page != null) {
-            int numberOfPages = certificateDao.fetchNumberOfPages(size);
-            if (page > numberOfPages) {
-                throw new NoSuchPageException(page);
-            }
+            checkPageOutOfRange(page, size);
+            PageRequest pageRequest = PageRequest.of(page, size, sort);
+            Page<GiftCertificate> certificatesPage = certificateRepository.findAll(pageRequest);
+            certificates = certificatesPage.get().collect(Collectors.toList());
+        } else {
+            Iterable<GiftCertificate> certificatesIterable = certificateRepository.findAll(sort);
+            certificatesIterable.forEach(certificates::add);
         }
-        List<GiftCertificate> certificates = certificateDao.readWithParameters(page, size, sortValue, sortType);
         return certificates.stream()
                 .map(certificate -> conversionService.convert(certificate, GiftCertificateDto.class))
                 .collect(Collectors.toList());
@@ -98,30 +109,46 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
         if (dto.getTags() == null) {
             dto.setTags(new HashSet<>());
         }
-        Optional<GiftCertificate> giftCertificateOptional = certificateDao.read(dto.getId());
+        Optional<GiftCertificate> giftCertificateOptional = certificateRepository.findById(dto.getId());
         GiftCertificate entity = giftCertificateOptional
                 .orElseThrow(() -> new NotExistentUpdateException(dto.getId()));
         updateEntity(entity, dto);
         Set<Tag> tags = processTags(dto.getTags());
         entity.setTags(tags);
-        return conversionService.convert(certificateDao.update(entity), GiftCertificateDto.class);
+        return conversionService.convert(certificateRepository.saveAndFlush(entity), GiftCertificateDto.class);
     }
 
     @Override
     @Transactional
-    public boolean delete(int id) {
-        return certificateDao.delete(id);
+    public void delete(int id) {
+        certificateRepository.deleteById(id);
     }
 
     public List<GiftCertificateDto> searchByCriteria(GiftCertificateCriteria criteria, Integer page, Integer size) {
-        List<GiftCertificate> certificates = certificateDao.searchByCriteria(criteria, page, size);
+        Sort sort = extractSort(criteria.getSortValue(), criteria.getSortType());
+        String name = criteria.getName() != null ? criteria.getName() : "";
+        String description = criteria.getDescription() != null ? criteria.getDescription() : "";
+        List<String> tagNames = criteria.getTagNames();
+        boolean needPagination = page != null && size != null;
+        boolean needSearchByTags = tagNames != null && !tagNames.isEmpty();
+        List<GiftCertificate> certificates;
+        if (needSearchByTags) {
+            certificates = findCertificatesWithTags(page, size, sort, name, description, tagNames, needPagination);
+        } else {
+            certificates = findCertificatesWithoutTags(page, size, sort, name, description, needPagination);
+        }
         return certificates.stream()
                 .map(certificate -> conversionService.convert(certificate, GiftCertificateDto.class))
                 .collect(Collectors.toList());
     }
 
     public int getLastPage(int size) {
-        return certificateDao.fetchNumberOfPages(size);
+        int count = (int) certificateRepository.count();
+        int pages = count / size;
+        if (count % size > 0) {
+            pages++;
+        }
+        return pages;
     }
 
     private void updateEntity(GiftCertificate entity, GiftCertificateDto dto) {
@@ -142,15 +169,64 @@ public class GiftCertificateService implements CommonService<GiftCertificateDto>
     private Set<Tag> processTags(Set<TagDto> tags) {
         Set<Tag> updatedTags = new HashSet<>();
         for (TagDto tagDto : tags) {
-            Optional<Tag> tagOptional = tagDao.readByName(tagDto.getName());
+            Optional<Tag> tagOptional = tagRepository.findByName(tagDto.getName());
             if (!tagOptional.isPresent()) {
                 Tag tag = new Tag();
                 tag.setName(tagDto.getName());
-                updatedTags.add(tagDao.create(tag));
+                updatedTags.add(tagRepository.save(tag));
             } else {
                 updatedTags.add(tagOptional.get());
             }
         }
         return updatedTags;
+    }
+
+    private Sort extractSort(SortValue sortValue, SortType sortType) {
+        Sort sort;
+        if (SortType.DESCENDING.equals(sortType)) {
+            sort = Sort.by(sortValue.getFieldName()).descending();
+        } else {
+            sort = Sort.by(sortValue.getFieldName()).ascending();
+        }
+        return sort;
+    }
+
+    private void checkPageOutOfRange(Integer page, Integer size) {
+        int numberOfPages = getLastPage(size);
+        if (page > numberOfPages) {
+            throw new NoSuchPageException(page);
+        }
+    }
+
+    private List<GiftCertificate> findCertificatesWithoutTags(Integer page, Integer size, Sort sort, String name,
+                                                              String description, boolean needPagination) {
+        List<GiftCertificate> certificates;
+        if (needPagination) {
+            PageRequest pageRequest = PageRequest.of(page, size, sort);
+            Page<GiftCertificate> pageCertificates = certificateRepository
+                    .findAllByNameContainsAndDescriptionContains(name, description, pageRequest);
+            certificates = pageCertificates.get().collect(Collectors.toList());
+        } else {
+            certificates = certificateRepository.findAllByNameContainsAndDescriptionContains(
+                    name, description, sort);
+        }
+        return certificates;
+    }
+
+    private List<GiftCertificate> findCertificatesWithTags(Integer page, Integer size, Sort sort, String name,
+                                                           String description, List<String> tagNames,
+                                                           boolean needPagination) {
+        List<GiftCertificate> certificates;
+        if (needPagination) {
+            PageRequest pageRequest = PageRequest.of(page, size, sort);
+            Page<GiftCertificate> pageTags = certificateRepository
+                    .findAllByNameContainsAndDescriptionContainsAndTagsNameIn(
+                            name, description, tagNames, pageRequest);
+            certificates = pageTags.get().collect(Collectors.toList());
+        } else {
+            certificates = certificateRepository
+                    .findAllByNameContainsAndDescriptionContainsAndTagsNameIn(name, description, tagNames, sort);
+        }
+        return certificates;
     }
 }

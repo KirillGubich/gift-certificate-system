@@ -48,16 +48,15 @@ class GiftCertificateConverterTest {
                 .withLastUpdateDate(now)
                 .withTags(tags)
                 .build();
-        GiftCertificateDto expected = GiftCertificateDto.builder()
-                .withId(1)
-                .withName("TestName")
-                .withDescription("Description")
-                .withPrice(new BigDecimal("12.56"))
-                .withDuration(10)
-                .withCreateDate(now.toString())
-                .withLastUpdateDate(now.toString())
-                .withTags(tagDtos)
-                .build();
+        GiftCertificateDto expected = GiftCertificateDto.builder().build();
+        expected.setId(1);
+        expected.setName("TestName");
+        expected.setDescription("Description");
+        expected.setPrice(new BigDecimal("12.56"));
+        expected.setDuration(10);
+        expected.setCreateDate(now.toString());
+        expected.setLastUpdateDate(now.toString());
+        expected.setTags(tagDtos);
 
         Mockito.when(tagConverter.convert(tag)).thenReturn(tagDto);
 

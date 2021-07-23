@@ -10,6 +10,8 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
@@ -45,5 +47,10 @@ public class TestConfig {
         ConversionServiceFactoryBean bean = new ConversionServiceFactoryBean();
         bean.afterPropertiesSet();
         return bean.getObject();
+    }
+
+    @Bean
+    protected PasswordEncoder devPasswordEncoder() {
+        return NoOpPasswordEncoder.getInstance();
     }
 }

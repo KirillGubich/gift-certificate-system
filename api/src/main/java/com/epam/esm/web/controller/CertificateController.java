@@ -11,6 +11,7 @@ import org.springframework.hateoas.Link;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -123,6 +124,7 @@ public class CertificateController {
      * @return newly created {@link GiftCertificateDto}
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GiftCertificateDto> createGiftCertificate(
             @Valid @RequestBody GiftCertificateDto giftCertificate) {
         GiftCertificateDto certificate = service.create(giftCertificate);
@@ -140,8 +142,10 @@ public class CertificateController {
      * @return server response
      */
     @DeleteMapping(value = "/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteGiftCertificate(@PathVariable int id) {
-        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -153,6 +157,7 @@ public class CertificateController {
      */
     @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasRole('ADMIN')")
     public GiftCertificateDto updateGiftCertificate(@PathVariable int id,
                                                     @RequestBody GiftCertificateDto giftCertificate) {
         giftCertificate.setId(id);

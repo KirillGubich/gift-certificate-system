@@ -4,14 +4,19 @@ import com.epam.esm.service.converter.GiftCertificateConverter;
 import com.epam.esm.service.converter.GiftCertificateDtoConverter;
 import com.epam.esm.service.converter.OrderConverter;
 import com.epam.esm.service.converter.OrderDtoConverter;
+import com.epam.esm.service.converter.RoleConverter;
+import com.epam.esm.service.converter.RoleDtoConverter;
 import com.epam.esm.service.converter.TagConverter;
 import com.epam.esm.service.converter.TagDtoConverter;
 import com.epam.esm.service.converter.UserConverter;
+import com.epam.esm.service.converter.UserDtoConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.accept.ContentNegotiationManager;
 import org.springframework.web.servlet.ViewResolver;
@@ -36,7 +41,10 @@ public class ApplicationConfig implements WebMvcConfigurer {
     @Override
     public void addFormatters(FormatterRegistry registry) {
         TagConverter tagConverter = new TagConverter();
-        UserConverter userConverter = new UserConverter();
+        RoleConverter roleConverter = new RoleConverter();
+        RoleDtoConverter roleDtoConverter = new RoleDtoConverter();
+        UserConverter userConverter = new UserConverter(roleConverter);
+        UserDtoConverter userDtoConverter = new UserDtoConverter(roleDtoConverter);
         GiftCertificateConverter giftCertificateConverter = new GiftCertificateConverter(tagConverter);
         OrderConverter orderConverter = new OrderConverter(userConverter, giftCertificateConverter);
         registry.addConverter(tagConverter);
@@ -44,6 +52,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
         registry.addConverter(orderConverter);
         registry.addConverter(new OrderDtoConverter());
         registry.addConverter(userConverter);
+        registry.addConverter(userDtoConverter);
         registry.addConverter(giftCertificateConverter);
         registry.addConverter(new GiftCertificateDtoConverter());
     }
@@ -58,5 +67,10 @@ public class ApplicationConfig implements WebMvcConfigurer {
     @Bean
     public MethodValidationPostProcessor methodValidationPostProcessor() {
         return new MethodValidationPostProcessor();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
     }
 }

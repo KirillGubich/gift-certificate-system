@@ -1,7 +1,7 @@
 package com.epam.esm.service.maintenance;
 
 import com.epam.esm.repository.config.TestConfig;
-import com.epam.esm.repository.dao.TagDao;
+import com.epam.esm.repository.dao.TagRepository;
 import com.epam.esm.repository.model.Tag;
 import com.epam.esm.service.dto.TagDto;
 import com.epam.esm.service.exception.NoSuchPageException;
@@ -13,6 +13,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -21,9 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.when;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.when;
 class TagServiceTest {
 
     @Mock
-    private TagDao tagDao;
+    private TagRepository tagRepository;
 
     @Mock
     private ConversionService conversionService;
@@ -43,7 +44,7 @@ class TagServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        tagService = new TagService(tagDao, conversionService);
+        tagService = new TagService(tagRepository, conversionService);
     }
 
     @Test
@@ -53,7 +54,7 @@ class TagServiceTest {
         TagDto tagDto = new TagDto(0, "AnyName");
         TagDto createdDto = new TagDto(id, "AnyName");
 
-        when(tagDao.create(any(Tag.class))).thenReturn(tag);
+        when(tagRepository.saveAndFlush(any(Tag.class))).thenReturn(tag);
         when(conversionService.convert(tag, TagDto.class)).thenReturn(createdDto);
         when(conversionService.convert(tagDto, Tag.class)).thenReturn(new Tag(0, "AnyName"));
 
@@ -73,7 +74,7 @@ class TagServiceTest {
         Tag tag = new Tag(id, "AnyName");
         TagDto tagDto = new TagDto(id, "AnyName");
 
-        when(tagDao.read(id)).thenReturn(Optional.of(tag));
+        when(tagRepository.findById(id)).thenReturn(Optional.of(tag));
         when(conversionService.convert(tag, TagDto.class)).thenReturn(tagDto);
 
         TagDto actual = tagService.read(id);
@@ -82,7 +83,7 @@ class TagServiceTest {
 
     @Test
     void read_throwException_whenTagNotExist() {
-        when(tagDao.read(anyInt())).thenReturn(Optional.empty());
+        when(tagRepository.findById(anyInt())).thenReturn(Optional.empty());
         assertThrows(NoSuchTagException.class,
                 () -> tagService.read(1));
     }
@@ -96,7 +97,7 @@ class TagServiceTest {
         TagDto tagDto2 = new TagDto(2, "name2");
         List<TagDto> expected = Arrays.asList(tagDto1, tagDto2);
 
-        when(tagDao.readAll()).thenReturn(tags);
+        when(tagRepository.findAll()).thenReturn(tags);
         when(conversionService.convert(tag1, TagDto.class)).thenReturn(tagDto1);
         when(conversionService.convert(tag2, TagDto.class)).thenReturn(tagDto2);
 
@@ -105,19 +106,9 @@ class TagServiceTest {
     }
 
     @Test
-    void delete_returnTrue_whenDeletedSuccessfully() {
+    void delete() {
         int id = 1;
-        when(tagDao.delete(id)).thenReturn(true);
-        boolean actual = tagService.delete(id);
-        assertTrue(actual);
-    }
-
-    @Test
-    void delete_returnFalse_whenSomethingWentWrong() {
-        int id = 1;
-        when(tagDao.delete(id)).thenReturn(false);
-        boolean actual = tagService.delete(id);
-        assertFalse(actual);
+        tagService.delete(id);
     }
 
     @Test
@@ -125,16 +116,19 @@ class TagServiceTest {
         Tag tag1 = new Tag(1, "name1");
         Tag tag2 = new Tag(2, "name2");
         List<Tag> tags = Arrays.asList(tag1, tag2);
-        TagDto tagDto1 = new TagDto(1, "name1");
+        TagDto tagDto1 = new TagDto();
+        tagDto1.setId(1);
+        tagDto1.setName("name1");
         TagDto tagDto2 = new TagDto(2, "name2");
         int page = 1;
         int size = 2;
+        long count = 100;
         List<TagDto> expected = Arrays.asList(tagDto1, tagDto2);
-
-        when(tagDao.readPaginated(page, size)).thenReturn(tags);
+        Page<Tag> tagPage = new PageImpl<>(tags);
+        when(tagRepository.findAll(any(PageRequest.class))).thenReturn(tagPage);
+        when(tagRepository.count()).thenReturn(count);
         when(conversionService.convert(tag1, TagDto.class)).thenReturn(tagDto1);
         when(conversionService.convert(tag2, TagDto.class)).thenReturn(tagDto2);
-        when(tagDao.fetchNumberOfPages(size)).thenReturn(1);
 
         List<TagDto> actual = tagService.readPaginated(page, size);
         assertEquals(expected, actual);
@@ -142,7 +136,8 @@ class TagServiceTest {
 
     @Test
     void readPaginated_throwException_whenNoSuchPageExist() {
-        when(tagDao.fetchNumberOfPages(anyInt())).thenReturn(1);
+        long count = 1;
+        when(tagRepository.count()).thenReturn(count);
         assertThrows(NoSuchPageException.class,
                 () -> tagService.readPaginated(2, 1));
     }
@@ -152,7 +147,7 @@ class TagServiceTest {
         Tag tag = new Tag(1, "name");
         TagDto expected = new TagDto(1, "name");
 
-        when(tagDao.readMostWidelyUsedTag()).thenReturn(Optional.of(tag));
+        when(tagRepository.findMostWidelyUsedTag()).thenReturn(tag);
         when(conversionService.convert(tag, TagDto.class)).thenReturn(expected);
 
         TagDto actual = tagService.receiveMostUsedTag();
@@ -161,15 +156,16 @@ class TagServiceTest {
 
     @Test
     void receiveMostUsedTag_getException_whenNotExist() {
-        when(tagDao.readMostWidelyUsedTag()).thenReturn(Optional.empty());
+        when(tagRepository.findMostWidelyUsedTag()).thenReturn(null);
         assertThrows(NoSuchTagException.class, () -> tagService.receiveMostUsedTag());
     }
 
     @Test
     void getLastPage_receiveLastPageNumber_whenItExist() {
+        long count = 100;
         int size = 20;
         int expected = 5;
-        when(tagDao.fetchNumberOfPages(size)).thenReturn(expected);
+        when(tagRepository.count()).thenReturn(count);
         int actual = tagService.getLastPage(size);
         assertEquals(expected, actual);
     }

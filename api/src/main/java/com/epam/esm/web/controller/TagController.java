@@ -10,6 +10,7 @@ import org.springframework.hateoas.Link;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -110,6 +111,7 @@ public class TagController {
      * @return newly created {@link TagDto}
      */
     @PostMapping(consumes = "application/json", produces = "application/json")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TagDto> createTag(@Valid @RequestBody TagDto tagDto) {
         TagDto tag = service.create(tagDto);
         Link selfLink = createSelfLink(tag);
@@ -126,8 +128,10 @@ public class TagController {
      * @return server response
      */
     @DeleteMapping(value = "/{id}", produces = "application/json")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteTag(@PathVariable int id) {
-        return service.delete(id) ? ResponseEntity.noContent().build() : ResponseEntity.badRequest().build();
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     private void addSelfLinks(List<TagDto> tags) {

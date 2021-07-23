@@ -7,6 +7,7 @@ import org.springframework.hateoas.server.core.Relation;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.util.Objects;
+import java.util.Set;
 
 @Relation(collectionRelation = "users", itemRelation = "user")
 public class UserDto extends RepresentationModel<UserDto> {
@@ -15,18 +16,30 @@ public class UserDto extends RepresentationModel<UserDto> {
 
     @NotBlank(message = ValidationMessageManager.BLANK_USER_NAME)
     @Size(min = 3, max = 100, message = ValidationMessageManager.USER_NAME_WRONG_SIZE)
-    private String name;
+    private String login;
 
     @Size(min = 8, max = 200, message = ValidationMessageManager.USER_PASSWORD_WRONG_SIZE)
     private String password;
 
+    @NotBlank(message = ValidationMessageManager.BLANK_USER_NAME)
+    @Size(min = 3, max = 100, message = ValidationMessageManager.USER_NAME_WRONG_SIZE)
+    private String firstName;
+
+    @NotBlank(message = ValidationMessageManager.BLANK_USER_NAME)
+    @Size(min = 3, max = 100, message = ValidationMessageManager.USER_NAME_WRONG_SIZE)
+    private String lastName;
+
+    private Set<RoleDto> roles;
+
     public UserDto() {
     }
 
-    public UserDto(int id, String name, String password) {
+    public UserDto(int id, String login, String password, String firstName, String lastName) {
         this.id = id;
-        this.name = name;
+        this.login = login;
         this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
     public int getId() {
@@ -37,12 +50,12 @@ public class UserDto extends RepresentationModel<UserDto> {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getLogin() {
+        return login;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setLogin(String login) {
+        this.login = login;
     }
 
     public String getPassword() {
@@ -53,25 +66,55 @@ public class UserDto extends RepresentationModel<UserDto> {
         this.password = password;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public Set<RoleDto> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<RoleDto> roles) {
+        this.roles = roles;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         UserDto userDto = (UserDto) o;
-        return id == userDto.id && Objects.equals(name, userDto.name) && Objects.equals(password, userDto.password);
+        return id == userDto.id && Objects.equals(login, userDto.login) && Objects.equals(password, userDto.password)
+                && Objects.equals(firstName, userDto.firstName) && Objects.equals(lastName, userDto.lastName)
+                && Objects.equals(roles, userDto.roles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, password);
+        return Objects.hash(super.hashCode(), id, login, password, firstName, lastName, roles);
     }
 
     @Override
     public String toString() {
         return "UserDto{" +
                 "id=" + id +
-                ", name='" + name + '\'' +
+                ", name='" + login + '\'' +
                 ", password='" + password + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", roles=" + roles +
                 '}';
     }
 }

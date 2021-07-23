@@ -21,6 +21,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,6 +29,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import javax.security.sasl.AuthenticationException;
+import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.HashSet;
 import java.util.Locale;
@@ -64,10 +67,12 @@ public class RestExceptionHandler {
     private static final String ORDER_NOT_FOUND_PROPERTY = "order_not_found";
     private static final String PAGE_NOT_FOUND_PROPERTY = "page_not_found";
     private static final String INVALID_ACTION_PROPERTY = "invalid_action";
-    private ErrorMessageManager messageManager;
+    private static final String UNAUTHORIZED_ACCESS_PROPERTY = "unauthorized_access";
+    private static final String INCORRECT_AUTHENTICATION_PROPERTY = "incorrect_authentication";
+    private final ErrorMessageManager messageManager;
 
     @Autowired
-    public void setMessageManager(ErrorMessageManager messageManager) {
+    public RestExceptionHandler(ErrorMessageManager messageManager) {
         this.messageManager = messageManager;
     }
 
@@ -263,6 +268,21 @@ public class RestExceptionHandler {
         String errorMessage = message + " (" + e.getMessage() + ")";
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.INVALID_DATA);
         return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorInfo> handleAuthenticationException(Locale locale) {
+        String errorMessage = messageManager.receiveMessage(INCORRECT_AUTHENTICATION_PROPERTY, locale);
+        ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.UNAUTHORIZED_ACCESS);
+        return new ResponseEntity<>(errorInfo, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorInfo> handleAuthorizationException(HttpServletResponse response, Locale locale) {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        String errorMessage = messageManager.receiveMessage(UNAUTHORIZED_ACCESS_PROPERTY, locale);
+        ErrorInfo errorInfo = new ErrorInfo(errorMessage, ErrorCode.UNAUTHORIZED_ACCESS);
+        return new ResponseEntity<>(errorInfo, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)

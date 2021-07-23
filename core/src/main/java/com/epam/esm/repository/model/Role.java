@@ -1,41 +1,41 @@
 package com.epam.esm.repository.model;
 
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 
 @Entity
-@Table(name = DatabaseInfo.TAG_TABLE)
-public class Tag {
+@Table(name = "roles")
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private int id;
+    private Integer id;
+
     private String name;
 
-    @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
-    private List<GiftCertificate> certificates;
+    @ManyToMany(mappedBy = "roles")
+    private Collection<User> users;
 
-    public Tag() {
+    public Role() {
     }
 
-    public Tag(int id, String name) {
+    public Role(Integer id, String name) {
         this.id = id;
         this.name = name;
     }
 
-    public int getId() {
-        return id;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public Integer getId() {
+        return id;
     }
 
     public String getName() {
@@ -46,28 +46,33 @@ public class Tag {
         this.name = name;
     }
 
-    public List<GiftCertificate> getCertificates() {
-        return certificates;
+    public Collection<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Collection<User> users) {
+        this.users = users;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Tag tag = (Tag) o;
-        return id == tag.id && Objects.equals(name, tag.name);
+        Role role = (Role) o;
+        return Objects.equals(id, role.id) && Objects.equals(name, role.name) && Objects.equals(users, role.users);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name);
+        return Objects.hash(id, name, users);
     }
 
     @Override
     public String toString() {
-        return "Tag{" +
+        return "Role{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", users=" + users +
                 '}';
     }
 }
