@@ -1,6 +1,8 @@
 plugins {
     id 'java'
     id 'war'
+    id "org.sonarqube" version "3.3"
+    id "jacoco"
 }
 
 group 'com.epam'
@@ -34,6 +36,14 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+sonarqube {
+    properties {
+        property 'sonar.host.url', 'http://localhost:9000'
+        property "sonar.coverage.jacoco.xmlReportPath", "${buildDir}/core/reports/jacoco.xml"
+    }
 }
 
 war {

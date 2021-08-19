@@ -26,6 +26,7 @@ test {
 }
 
 war {
+    dependsOn 'test'
     archiveName 'gift-certificate-system.war'
     from 'api/src/main/resources'
 }
