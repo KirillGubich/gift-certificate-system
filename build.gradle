@@ -45,13 +45,3 @@ sonarqube {
         property "sonar.coverage.jacoco.xmlReportPath", "${buildDir}/core/reports/jacoco.xml"
     }
 }
-
-war {
-    archiveName 'gift-certificate-system.war'
-//    from 'core/src/main/resources', 'core/src/test/resources'
-//    from 'api/build/classes/java/main', 'core/build/classes/java/main',
-//            'api/build/classes/java/test', 'core/build/classes/java/test'
-    from('core/src/main/resources') {
-        include 'database.properties'
-    }
-}
